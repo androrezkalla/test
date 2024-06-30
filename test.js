@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faTrashAlt, faEdit, faSave, faTimes } from '@fortawesome/free-solid-svg-icons';
+import { faTrashAlt, faEdit, faSave, faTimes, faFileExcel } from '@fortawesome/free-solid-svg-icons';
+import * as XLSX from 'xlsx';
 
 const CentralDatabase = ({ darkMode }) => {
   const [assets, setAssets] = useState([]);
@@ -94,6 +95,7 @@ const CentralDatabase = ({ darkMode }) => {
 
   const calculateStats = () => {
     const stats = {
+      total_assets: assets.length,
       imaging_complete: 0,
       ynx1c_complete: 0,
       business_bundles_complete: 0,
@@ -110,6 +112,13 @@ const CentralDatabase = ({ darkMode }) => {
     return stats;
   };
 
+  const handleExportToExcel = () => {
+    const ws = XLSX.utils.json_to_sheet(assets);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Assets");
+    XLSX.writeFile(wb, "assets.xlsx");
+  };
+
   const stats = calculateStats();
 
   return (
@@ -120,11 +129,22 @@ const CentralDatabase = ({ darkMode }) => {
       <div className="mb-4 p-4 border rounded-md bg-gray-100 dark:bg-gray-800 dark:border-gray-600">
         <h2 className="text-xl font-semibold mb-2 text-gray-900 dark:text-gray-100">Statistics</h2>
         <div className="grid grid-cols-2 gap-4 text-gray-700 dark:text-gray-300">
+          <div>Total Assets: {stats.total_assets}</div>
           <div>Imaging Complete: {stats.imaging_complete}</div>
           <div>YNX1C Complete: {stats.ynx1c_complete}</div>
           <div>Business Bundles Complete: {stats.business_bundles_complete}</div>
           <div>RSA Complete: {stats.rsa_complete}</div>
         </div>
+      </div>
+
+      {/* Export to Excel Button */}
+      <div className="mb-4 text-right">
+        <button
+          onClick={handleExportToExcel}
+          className={`px-4 py-2 rounded-md ${darkMode ? 'bg-green-600 text-gray-100 hover:bg-green-700' : 'bg-green-500 text-white hover:bg-green-600'}`}
+        >
+          <FontAwesomeIcon icon={faFileExcel} className="mr-2" />Export to Excel
+        </button>
       </div>
 
       {assets.length === 0 ? (
