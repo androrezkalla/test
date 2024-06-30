@@ -109,7 +109,6 @@ const CentralDatabase = ({ darkMode }) => {
           <div>Total Assets: {stats.total_assets}</div>
           <div>Imaging Complete: {stats.imaging_complete}</div>
           <div>YNX1C Complete: {stats.ynx1c_complete}</div>
-          <div>Business Bundles Complete: {stats.business_bundles_complete}</div>
           <div>RSA Complete: {stats.rsa_complete}</div>
         </div>
       </div>
@@ -144,12 +143,10 @@ const CentralDatabase = ({ darkMode }) => {
                   ) : (
                     <>
                       <p className={`text-lg ${darkMode ? 'text-gray-100' : 'text-gray-900'}`}>{asset.asset_number}</p>
-                      <p className={`text-sm ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>Business Group: {asset.business_group}</p>
+                      <p className={`text-sm ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>Batch Date: {new Date(asset.batch_date).toLocaleDateString()}</p>
+                      <p className={`text-sm ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>Technician: {asset.technician}</p>
                     </>
                   )}
-                  <p className={`text-sm ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>Batch Date: {new Date(asset.batch_date).toLocaleDateString()}</p>
-                  <p className={`text-sm ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>Technician: {asset.technician}</p>
-
                   {/* Stage Checkboxes */}
                   <div className="mt-2 space-y-2">
                     <label className="flex items-center">
