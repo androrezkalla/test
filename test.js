@@ -7,7 +7,6 @@ const CentralDatabase = ({ darkMode }) => {
   const [assets, setAssets] = useState([]);
   const [editAssetId, setEditAssetId] = useState(null);
   const [editAssetNumber, setEditAssetNumber] = useState('');
-  const [editBusinessGroup, setEditBusinessGroup] = useState('');
 
   useEffect(() => {
     fetchAssets();
@@ -40,10 +39,9 @@ const CentralDatabase = ({ darkMode }) => {
     }
   };
 
-  const handleEditAsset = (assetId, assetNumber, businessGroup) => {
+  const handleEditAsset = (assetId, assetNumber) => {
     setEditAssetId(assetId);
     setEditAssetNumber(assetNumber);
-    setEditBusinessGroup(businessGroup);
   };
 
   const handleSaveEdit = async (assetId) => {
@@ -53,7 +51,7 @@ const CentralDatabase = ({ darkMode }) => {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ asset_number: editAssetNumber, business_group: editBusinessGroup }),
+        body: JSON.stringify({ asset_number: editAssetNumber }),
       });
       if (!response.ok) {
         throw new Error('Failed to save asset');
@@ -62,7 +60,6 @@ const CentralDatabase = ({ darkMode }) => {
       setAssets(assets.map((asset) => (asset.id === assetId ? updatedAsset : asset)));
       setEditAssetId(null);
       setEditAssetNumber('');
-      setEditBusinessGroup('');
     } catch (error) {
       console.error('Failed to edit asset:', error);
     }
@@ -71,26 +68,6 @@ const CentralDatabase = ({ darkMode }) => {
   const handleCancelEdit = () => {
     setEditAssetId(null);
     setEditAssetNumber('');
-    setEditBusinessGroup('');
-  };
-
-  const handleStageUpdate = async (assetId, stage, status) => {
-    try {
-      const response = await fetch(`http://localhost:5000/api/assets/${assetId}/stage`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ stage, status }),
-      });
-      if (!response.ok) {
-        throw new Error('Failed to update stage status');
-      }
-      const updatedAsset = await response.json();
-      setAssets(assets.map((asset) => (asset.id === updatedAsset.id ? updatedAsset : asset)));
-    } catch (error) {
-      console.error('Failed to update stage status:', error);
-    }
   };
 
   const calculateStats = () => {
@@ -163,13 +140,6 @@ const CentralDatabase = ({ darkMode }) => {
                         onChange={(e) => setEditAssetNumber(e.target.value)}
                         className={`block w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none sm:text-sm ${darkMode ? 'bg-gray-800 border-gray-600 text-gray-300' : 'border-gray-300 bg-white text-gray-900'}`}
                       />
-                      <input
-                        type="text"
-                        value={editBusinessGroup}
-                        onChange={(e) => setEditBusinessGroup(e.target.value)}
-                        className={`block w-full mt-2 px-3 py-2 border rounded-md shadow-sm focus:outline-none sm:text-sm ${darkMode ? 'bg-gray-800 border-gray-600 text-gray-300' : 'border-gray-300 bg-white text-gray-900'}`}
-                        placeholder="Business Group"
-                      />
                     </>
                   ) : (
                     <>
@@ -239,7 +209,7 @@ const CentralDatabase = ({ darkMode }) => {
                   ) : (
                     <>
                       <button
-                        onClick={() => handleEditAsset(asset.id, asset.asset_number, asset.business_group)}
+                        onClick={() => handleEditAsset(asset.id, asset.asset_number)}
                         className={`px-2 py-1 rounded-md ${darkMode ? 'bg-blue-600 text-gray-100 hover:bg-blue-700' : 'bg-blue-500 text-white hover:bg-blue-600'}`}
                       >
                         <FontAwesomeIcon icon={faEdit} />
