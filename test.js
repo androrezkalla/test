@@ -181,7 +181,18 @@ const CentralDatabase = ({ darkMode }) => {
                     <FontAwesomeIcon icon={faPhoneAlt} />
                   </button>
                   {/* Edit and Delete Buttons */}
-                  {/* Replace with your edit and delete button logic */}
+                  <button
+                    onClick={() => handleEditAsset(asset.id, asset.asset_number)}
+                    className={`px-2 py-1 rounded-md ${darkMode ? 'bg-blue-600 text-gray-100 hover:bg-blue-700' : 'bg-blue-500 text-white hover:bg-blue-600'}`}
+                  >
+                    <FontAwesomeIcon icon={faEdit} />
+                  </button>
+                  <button
+                    onClick={() => handleDeleteAsset(asset.id)}
+                    className={`px-2 py-1 rounded-md ${darkMode ? 'bg-red-600 text-gray-100 hover:bg-red-700' : 'bg-red-500 text-white hover:bg-red-600'}`}
+                  >
+                    <FontAwesomeIcon icon={faTrashAlt} />
+                  </button>
                 </div>
               </div>
               {/* Phone Modal */}
