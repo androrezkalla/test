@@ -1,62 +1,131 @@
-const express = require('express');
-const bodyParser = require('body-parser');
-const { exec } = require('child_process');
+import React, { useState } from 'react';
 
-const app = express();
-app.use(bodyParser.json());
+const UserDataRetrieval = ({ darkMode }) => {
+  const [employeeID, setEmployeeID] = useState('');
+  const [samAccountName, setSamAccountName] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [output, setOutput] = useState('');
+  const [error, setError] = useState('');
+  const [searchBy, setSearchBy] = useState('employeeID'); // Default to searching by EmployeeID
 
-app.post('/api/getUserDetails', (req, res) => {
-  const { sid } = req.body;
+  const handleScriptExecution = async () => {
+    setLoading(true);
+    setError('');
+    setOutput('');
 
-  if (!sid) {
-    return res.status(400).send('SID is required');
-  }
-
-  const script = `
-    $sid = "${sid}"
-    $user = Get-ADUser -Filter {ObjectSID -eq $sid} -Properties * | Select-Object GivenName,Surname,SamAccountName,HomeDirectory
-    if ($user) {
-      $result = @{
-        status = "User Found"
-        GivenName = $user.GivenName
-        Surname = $user.Surname
-        SamAccountName = $user.SamAccountName
-        HomeDirectory = $user.HomeDirectory
-      } | ConvertTo-Json
-    }
-    else {
-      $result = @{
-        status = "Not Found"
-      } | ConvertTo-Json
-    }
-    Write-Output $result
-  `;
-
-  exec(`powershell -ExecutionPolicy Bypass -NoProfile -Command "${script}"`, (error, stdout, stderr) => {
-    if (error) {
-      console.error(`exec error: ${error}`);
-      return res.status(500).send(error.message);
-    }
-    if (stderr) {
-      console.error(`stderr: ${stderr}`);
-      return res.status(500).send(stderr);
-    }
-
-    console.log('stdout:', stdout); // Check what PowerShell outputs
-
-    if (!stdout.trim()) {
-      return res.status(404).send('No user found');
+    let script = '';
+    if (searchBy === 'employeeID') {
+      script = `Get-ADUser -Filter {EmployeeID -eq '${employeeID}'} -Properties * | Select GivenName,Surname,SamAccountName,EmployeeID,HomeDirectory,SID`;
+    } else if (searchBy === 'samAccountName') {
+      script = `Get-ADUser -Filter {SamAccountName -eq '${samAccountName}'} -Properties * | Select GivenName,Surname,SamAccountName,EmployeeID,HomeDirectory,SID`;
+    } else {
+      setError('Invalid search criteria');
+      setLoading(false);
+      return;
     }
 
     try {
-      const result = JSON.parse(stdout);
-      res.json(result);
-    } catch (err) {
-      console.error(`Error parsing JSON: ${err}`);
-      res.status(500).send('Error parsing JSON response from PowerShell');
-    }
-  });
-});
+      const response = await fetch('http://127.0.0.1:5000/api/run-powershell', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ script }),
+      });
 
-const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+      const data = await response.json();
+
+      if (response.ok) {
+        setOutput(data.output);
+      } else {
+        setError(data.error);
+      }
+    } catch (error) {
+      setError('Failed to execute the script');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className={`container mx-auto p-6 max-w-4xl ${darkMode ? 'dark' : ''}`}>
+      <h1 className="text-2xl font-bold mb-4 mt-20 text-center text-gray-900 dark:text-gray-100">
+        User Data Retrieval
+      </h1>
+
+      <div className="bg-white dark:bg-gray-900 p-6 rounded-lg shadow-lg mb-8">
+        <form onSubmit={(e) => { e.preventDefault(); handleScriptExecution(); }} className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+              Search By
+            </label>
+            <select
+              className={`mt-1 block w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm ${
+                darkMode ? 'bg-gray-800 border-gray-600 text-gray-300' : 'border-gray-300 bg-white text-gray-900'
+              }`}
+              value={searchBy}
+              onChange={(e) => setSearchBy(e.target.value)}
+              required
+            >
+              <option value="employeeID">Employee ID</option>
+              <option value="samAccountName">SamAccountName</option>
+            </select>
+          </div>
+          {searchBy === 'employeeID' ? (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                Employee ID
+              </label>
+              <input
+                type="text"
+                className={`mt-1 block w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm ${
+                  darkMode ? 'bg-gray-800 border-gray-600 text-gray-300' : 'border-gray-300 bg-white text-gray-900'
+                }`}
+                value={employeeID}
+                onChange={(e) => setEmployeeID(e.target.value)}
+                required
+              />
+            </div>
+          ) : (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                SamAccountName
+              </label>
+              <input
+                type="text"
+                className={`mt-1 block w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm ${
+                  darkMode ? 'bg-gray-800 border-gray-600 text-gray-300' : 'border-gray-300 bg-white text-gray-900'
+                }`}
+                value={samAccountName}
+                onChange={(e) => setSamAccountName(e.target.value)}
+                required
+              />
+            </div>
+          )}
+
+          <div className="flex justify-between">
+            <button
+              type="submit"
+              className={`flex items-center bg-blue-500 text-white py-2 px-4 rounded-lg hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-400 ${
+                loading ? 'cursor-not-allowed' : ''
+              }`}
+              disabled={loading}
+            >
+              {loading ? 'Running...' : 'Run Script'}
+            </button>
+          </div>
+        </form>
+
+        {error && <p className="mt-4 text-red-500">{error}</p>}
+        {output && (
+          <div className="mt-4 bg-gray-100 p-4 rounded-lg shadow-sm dark:bg-gray-800">
+            <h2 className="text-xl font-semibold text-gray-800 dark:text-gray-100 mb-4">Output</h2>
+            <pre className="whitespace-pre-wrap text-gray-900 dark:text-gray-300">{output}</pre>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+export default UserDataRetrieval;
