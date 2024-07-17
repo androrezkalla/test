@@ -5,7 +5,7 @@ app.post('/api/get-asset-info', (req, res) => {
     return res.status(400).send({ success: false, error: 'Hostname is required' });
   }
 
-  const script = `$hostname = "${hostname}"; $computerSystem = Get-CimInstance -ClassName Win32_ComputerSystem -ComputerName $hostname; $os = Get-CimInstance -ClassName Win32_OperatingSystem -ComputerName $hostname; $ipAddresses = (Get-CimInstance -ClassName Win32_NetworkAdapterConfiguration -ComputerName $hostname | Where-Object { $_.IPAddress }).IPAddress; $applications = Get-CimInstance -ClassName Win32_Product -ComputerName $hostname | Select-Object -Property Name; $result = @{ Hostname = $hostname; Owner = $computerSystem.UserName; WindowsVersion = $os.Caption; IP = $ipAddresses -join ", "; Applications = $applications | ForEach-Object { $_.Name } }; $result | ConvertTo-Json`;
+  const script = `$hostname = "${hostname}"; $computerSystem = Get-CimInstance -ClassName Win32_ComputerSystem -ComputerName $hostname; $os = Get-CimInstance -ClassName Win32_OperatingSystem -ComputerName $hostname; $ipAddresses = (Get-CimInstance -ClassName Win32_NetworkAdapterConfiguration -ComputerName $hostname | Where-Object { $_.IPAddress }).IPAddress; $applications = Get-CimInstance -ClassName Win32_Product -ComputerName $hostname | Select-Object -Property Name; $result = @{ Hostname = $hostname; Owner = $computerSystem.UserName; WindowsVersion = $os.Caption; IP = $ipAddresses -join ', '; Applications = $applications | ForEach-Object { $_.Name } }; $result | ConvertTo-Json -Compress`;
 
   exec(`powershell -Command "${script}"`, (error, stdout, stderr) => {
     if (error) {
