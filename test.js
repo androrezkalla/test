@@ -117,12 +117,17 @@ const UserDataRetrieval = ({ darkMode }) => {
         </form>
 
         {error && <p className="mt-4 text-red-500">{error}</p>}
-        {output && (
-          <div className="mt-4 bg-gray-100 p-4 rounded-lg shadow-sm dark:bg-gray-800">
-            <h2 className="text-xl font-semibold text-gray-800 dark:text-gray-100 mb-4">Output</h2>
-            <pre className="whitespace-pre-wrap text-gray-900 dark:text-gray-300">{output}</pre>
+
+        <div className="mt-8 bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden">
+          <div className="px-6 py-4 bg-gray-200 dark:bg-gray-700">
+            <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-200">Output</h2>
           </div>
-        )}
+          <div className="p-4 overflow-auto max-h-96">
+            <pre className="whitespace-pre-wrap text-sm text-gray-900 dark:text-gray-300 p-2 bg-white dark:bg-gray-700 rounded-lg overflow-auto">
+              {output}
+            </pre>
+          </div>
+        </div>
       </div>
     </div>
   );
