@@ -42,7 +42,7 @@ const AssetDetails = ({ darkMode }) => {
     setOutput('');
 
     try {
-      const script = `$apps = Get-ItemProperty HKLM:\\Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\* | Where-Object { $_.DisplayName -and $_.DisplayVersion -and $_.PSChildName } | Select-Object DisplayName, DisplayVersion, PSChildName | ConvertTo-Json -Compress; $apps`;
+      const script = `$apps = Get-ItemProperty HKLM:\\Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\* | Where-Object { $_.DisplayName -and $_.DisplayVersion } | Select-Object DisplayName, DisplayVersion, @{Name="AppCode";Expression={$_.PSChildName.Substring(0,4)}} | ConvertTo-Json -Compress; $apps`;
       const response = await fetch('http://127.0.0.1:5000/api/run-powershell', {
         method: 'POST',
         headers: {
