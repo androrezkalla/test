@@ -101,9 +101,7 @@ const Assets = ({ darkMode }) => {
           </div>
           <div className="p-4">
             <pre className="whitespace-pre-wrap text-gray-900 dark:text-gray-300">
-              {output.split('\n').map((line, index) => (
-                <div key={index}>{line}</div>
-              ))}
+              {JSON.stringify(JSON.parse(output), null, 2)}
             </pre>
           </div>
         </div>
