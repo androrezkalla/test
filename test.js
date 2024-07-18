@@ -13,8 +13,9 @@ const Assets = ({ darkMode }) => {
 
     try {
       const script = `
-        Get-CimInstance -ClassName Win32_ComputerSystem -ComputerName ${hostname} |
-        Select-Object PSComputerName, Manufacturer, Model, TotalPhysicalMemory, UserName
+        Get-CimInstance -ClassName Win32_ComputerSystem -ComputerName '${hostname}' |
+        Select-Object PSComputerName, Manufacturer, Model, TotalPhysicalMemory, UserName |
+        ConvertTo-Json -Compress
       `;
       const response = await fetch('http://127.0.0.1:5000/api/run-powershell', {
         method: 'POST',
@@ -47,8 +48,9 @@ const Assets = ({ darkMode }) => {
       const script = `
         $apps = Get-ItemProperty HKLM:\\Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\* |
         Where-Object { $_.DisplayName -and $_.DisplayVersion -and $_.PSChildName } |
-        Select-Object DisplayName, DisplayVersion, PSChildName
-        $apps | ConvertTo-Json
+        Select-Object DisplayName, DisplayVersion, PSChildName |
+        ConvertTo-Json -Compress
+        $apps
       `;
       const response = await fetch('http://127.0.0.1:5000/api/run-powershell', {
         method: 'POST',
@@ -126,7 +128,7 @@ const Assets = ({ darkMode }) => {
           </div>
           <div className="p-4">
             <pre className="whitespace-pre-wrap text-gray-900 dark:text-gray-300">
-              {JSON.stringify(JSON.parse(output), null, 2)}
+              {output}
             </pre>
           </div>
         </div>
