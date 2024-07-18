@@ -23,8 +23,7 @@ const AssetDetails = ({ darkMode }) => {
 
       const data = await response.json();
 
-      if (response.ok) {
-        // Format JSON-like output for display
+      if (data.success) {
         const formattedOutput = formatJsonOutput(data.output);
         setOutput(formattedOutput);
       } else {
@@ -34,19 +33,6 @@ const AssetDetails = ({ darkMode }) => {
       setError('Failed to execute the script');
     } finally {
       setLoading(false);
-    }
-  };
-
-  // Helper function to format JSON-like output for display
-  const formatJsonOutput = (jsonString) => {
-    try {
-      const parsedJson = JSON.parse(jsonString);
-      return Object.keys(parsedJson)
-        .map(key => `${key} : ${parsedJson[key]}`)
-        .join('\n');
-    } catch (error) {
-      console.error('Error parsing JSON:', error);
-      return jsonString; // Return original string if parsing fails
     }
   };
 
@@ -67,9 +53,8 @@ const AssetDetails = ({ darkMode }) => {
 
       const data = await response.json();
 
-      if (response.ok) {
-        // Format JSON-like output for display
-        const formattedOutput = formatApplicationList(data);
+      if (data.success) {
+        const formattedOutput = formatApplicationList(data.output);
         setOutput(formattedOutput);
       } else {
         setError(data.error);
@@ -81,7 +66,18 @@ const AssetDetails = ({ darkMode }) => {
     }
   };
 
-  // Helper function to format application list for display
+  const formatJsonOutput = (jsonString) => {
+    try {
+      const parsedJson = JSON.parse(jsonString);
+      return Object.keys(parsedJson)
+        .map(key => `${key} : ${parsedJson[key]}`)
+        .join('\n');
+    } catch (error) {
+      console.error('Error parsing JSON:', error);
+      return jsonString; // Return original string if parsing fails
+    }
+  };
+
   const formatApplicationList = (jsonData) => {
     try {
       const apps = JSON.parse(jsonData);
