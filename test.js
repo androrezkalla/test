@@ -6,12 +6,16 @@ const Assets = ({ darkMode }) => {
   const [output, setOutput] = useState('');
   const [error, setError] = useState('');
 
-  const handleScriptExecution = async (script) => {
+  const handleFetchAssetDetails = async () => {
     setLoading(true);
     setError('');
     setOutput('');
 
     try {
+      const script = `
+        Get-CimInstance -ClassName Win32_ComputerSystem -ComputerName ${hostname} |
+        Select-Object PSComputerName, Manufacturer, Model, TotalPhysicalMemory, UserName
+      `;
       const response = await fetch('http://127.0.0.1:5000/api/run-powershell', {
         method: 'POST',
         headers: {
@@ -34,17 +38,38 @@ const Assets = ({ darkMode }) => {
     }
   };
 
-  const handleFetchAssetDetails = async () => {
-    const script = `Get-ADComputer -Filter {Name -eq '${hostname}'} -Properties * | Select Name,DistinguishedName,OperatingSystem,IPv4Address`;
-    await handleScriptExecution(script);
-  };
-
   const handleFetchApplicationList = async () => {
-    const script = `
-      $apps = Get-ItemProperty HKLM:\\Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\* | Select-Object DisplayName, DisplayVersion, PSChildName
-      $apps | ConvertTo-Json
-    `;
-    await handleScriptExecution(script);
+    setLoading(true);
+    setError('');
+    setOutput('');
+
+    try {
+      const script = `
+        $apps = Get-ItemProperty HKLM:\\Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\* |
+        Where-Object { $_.DisplayName -and $_.DisplayVersion -and $_.PSChildName } |
+        Select-Object DisplayName, DisplayVersion, PSChildName
+        $apps | ConvertTo-Json
+      `;
+      const response = await fetch('http://127.0.0.1:5000/api/run-powershell', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ script }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        setOutput(data.output);
+      } else {
+        setError(data.error);
+      }
+    } catch (error) {
+      setError('Failed to execute the script');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
