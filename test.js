@@ -24,7 +24,9 @@ const AssetDetails = ({ darkMode }) => {
       const data = await response.json();
 
       if (response.ok) {
-        setOutput(data.output);
+        // Format JSON-like output for display
+        const formattedOutput = formatJsonOutput(data.output);
+        setOutput(formattedOutput);
       } else {
         setError(data.error);
       }
@@ -32,6 +34,19 @@ const AssetDetails = ({ darkMode }) => {
       setError('Failed to execute the script');
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Helper function to format JSON-like output for display
+  const formatJsonOutput = (jsonString) => {
+    try {
+      const parsedJson = JSON.parse(jsonString);
+      return Object.keys(parsedJson)
+        .map(key => `${key} : ${parsedJson[key]}`)
+        .join('\n');
+    } catch (error) {
+      console.error('Error parsing JSON:', error);
+      return jsonString; // Return original string if parsing fails
     }
   };
 
@@ -53,7 +68,9 @@ const AssetDetails = ({ darkMode }) => {
       const data = await response.json();
 
       if (response.ok) {
-        setOutput(data.output);
+        // Format JSON-like output for display
+        const formattedOutput = formatJsonOutput(data.output);
+        setOutput(formattedOutput);
       } else {
         setError(data.error);
       }
