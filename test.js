@@ -100,7 +100,11 @@ const Assets = ({ darkMode }) => {
             <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-200">Asset Information</h2>
           </div>
           <div className="p-4">
-            <pre className="whitespace-pre-wrap text-gray-900 dark:text-gray-300">{output}</pre>
+            <pre className="whitespace-pre-wrap text-gray-900 dark:text-gray-300">
+              {output.split('\n').map((line, index) => (
+                <div key={index}>{line}</div>
+              ))}
+            </pre>
           </div>
         </div>
       )}
