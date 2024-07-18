@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 
-const Assets = ({ darkMode }) => {
+const AssetDetails = ({ darkMode }) => {
   const [hostname, setHostname] = useState('');
   const [loading, setLoading] = useState(false);
   const [output, setOutput] = useState('');
@@ -116,7 +116,7 @@ const Assets = ({ darkMode }) => {
           <div className="px-6 py-4 bg-gray-200 dark:bg-gray-700">
             <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-200">Asset Information</h2>
           </div>
-          <div className="p-4">
+          <div className="p-4 overflow-auto max-h-96">
             <pre className="whitespace-pre-wrap text-gray-900 dark:text-gray-300">
               {output}
             </pre>
@@ -127,4 +127,4 @@ const Assets = ({ darkMode }) => {
   );
 };
 
-export default Assets;
+export default AssetDetails;
