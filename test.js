@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 
-const AssetDetails = ({ darkMode }) => {
+const Assets = ({ darkMode }) => {
   const [hostname, setHostname] = useState('');
   const [loading, setLoading] = useState(false);
   const [output, setOutput] = useState('');
@@ -40,7 +40,10 @@ const AssetDetails = ({ darkMode }) => {
   };
 
   const handleFetchApplicationList = async () => {
-    const script = `Get-WmiObject -Class Win32_Product -ComputerName ${hostname} | Select Name`;
+    const script = `
+      $apps = Get-ItemProperty HKLM:\\Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\* | Select-Object DisplayName, DisplayVersion, PSChildName
+      $apps | ConvertTo-Json
+    `;
     await handleScriptExecution(script);
   };
 
@@ -105,4 +108,4 @@ const AssetDetails = ({ darkMode }) => {
   );
 };
 
-export default AssetDetails;
+export default Assets;
