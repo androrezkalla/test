@@ -69,7 +69,7 @@ const AssetDetails = ({ darkMode }) => {
 
       if (response.ok) {
         // Format JSON-like output for display
-        const formattedOutput = formatJsonOutput(data.output);
+        const formattedOutput = formatApplicationList(data);
         setOutput(formattedOutput);
       } else {
         setError(data.error);
@@ -78,6 +78,21 @@ const AssetDetails = ({ darkMode }) => {
       setError('Failed to execute the script');
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Helper function to format application list for display
+  const formatApplicationList = (jsonData) => {
+    try {
+      const apps = JSON.parse(jsonData);
+      return apps.map(app => {
+        return Object.keys(app)
+          .map(key => `${key} : ${app[key]}`)
+          .join('\n');
+      }).join('\n\n');
+    } catch (error) {
+      console.error('Error parsing JSON:', error);
+      return jsonData; // Return original string if parsing fails
     }
   };
 
