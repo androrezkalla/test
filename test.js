@@ -2,12 +2,13 @@ import React, { useState } from 'react';
 
 const AssetDetails = ({ darkMode }) => {
   const [hostname, setHostname] = useState('');
-  const [loading, setLoading] = useState(false);
+  const [loadingAssetDetails, setLoadingAssetDetails] = useState(false);
+  const [loadingApplicationList, setLoadingApplicationList] = useState(false);
   const [output, setOutput] = useState('');
   const [error, setError] = useState('');
 
   const handleFetchAssetDetails = async () => {
-    setLoading(true);
+    setLoadingAssetDetails(true);
     setError('');
     setOutput('');
 
@@ -32,12 +33,12 @@ const AssetDetails = ({ darkMode }) => {
     } catch (error) {
       setError('Failed to execute the script');
     } finally {
-      setLoading(false);
+      setLoadingAssetDetails(false);
     }
   };
 
   const handleFetchApplicationList = async () => {
-    setLoading(true);
+    setLoadingApplicationList(true);
     setError('');
     setOutput('');
 
@@ -62,7 +63,7 @@ const AssetDetails = ({ darkMode }) => {
     } catch (error) {
       setError('Failed to execute the script');
     } finally {
-      setLoading(false);
+      setLoadingApplicationList(false);
     }
   };
 
@@ -118,20 +119,20 @@ const AssetDetails = ({ darkMode }) => {
             <button
               onClick={handleFetchAssetDetails}
               className={`flex items-center bg-blue-500 text-white py-2 px-4 rounded-lg hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-400 ${
-                loading ? 'cursor-not-allowed' : ''
+                loadingAssetDetails ? 'cursor-not-allowed' : ''
               }`}
-              disabled={loading}
+              disabled={loadingAssetDetails}
             >
-              {loading ? 'Fetching...' : 'Fetch Asset Details'}
+              {loadingAssetDetails ? 'Fetching...' : 'Fetch Asset Details'}
             </button>
             <button
               onClick={handleFetchApplicationList}
               className={`flex items-center bg-blue-500 text-white py-2 px-4 rounded-lg hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-400 ${
-                loading ? 'cursor-not-allowed' : ''
+                loadingApplicationList ? 'cursor-not-allowed' : ''
               }`}
-              disabled={loading}
+              disabled={loadingApplicationList}
             >
-              {loading ? 'Fetching...' : 'Fetch Application List'}
+              {loadingApplicationList ? 'Fetching...' : 'Fetch Application List'}
             </button>
           </div>
         </div>
