@@ -222,7 +222,7 @@ const CentralDatabase = ({ darkMode }) => {
                       <div>Login ID: {asset.login_id}</div>
                       <div>Business Group: {asset.business_group}</div>
                       {userInfo[asset.login_id] && (
-                        <pre className="mt-2 bg-gray-100 p-2 rounded-lg shadow-sm dark:bg-gray-800 dark:text-gray-300">
+                        <pre className="mt-2 bg-gray-100 p-2 rounded-lg shadow-sm dark:bg-gray-800 dark:text-gray-300 whitespace-pre-wrap">
                           {userInfo[asset.login_id]}
                         </pre>
                       )}
