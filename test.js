@@ -7,6 +7,7 @@ const CentralDatabase = ({ darkMode }) => {
   const [assets, setAssets] = useState([]);
   const [editAssetId, setEditAssetId] = useState(null);
   const [editAssetNumber, setEditAssetNumber] = useState('');
+  const [editLoginId, setEditLoginId] = useState('');
 
   useEffect(() => {
     fetchAssets();
@@ -39,9 +40,10 @@ const CentralDatabase = ({ darkMode }) => {
     }
   };
 
-  const handleEditAsset = (assetId, assetNumber) => {
+  const handleEditAsset = (assetId, assetNumber, loginId) => {
     setEditAssetId(assetId);
     setEditAssetNumber(assetNumber);
+    setEditLoginId(loginId);
   };
 
   const handleSaveEdit = async (assetId) => {
@@ -51,7 +53,7 @@ const CentralDatabase = ({ darkMode }) => {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ asset_number: editAssetNumber }),
+        body: JSON.stringify({ asset_number: editAssetNumber, login_id: editLoginId }),
       });
       if (!response.ok) {
         throw new Error('Failed to save asset');
@@ -60,6 +62,7 @@ const CentralDatabase = ({ darkMode }) => {
       setAssets(assets.map((asset) => (asset.id === assetId ? updatedAsset : asset)));
       setEditAssetId(null);
       setEditAssetNumber('');
+      setEditLoginId('');
     } catch (error) {
       console.error('Failed to edit asset:', error);
     }
@@ -68,6 +71,7 @@ const CentralDatabase = ({ darkMode }) => {
   const handleCancelEdit = () => {
     setEditAssetId(null);
     setEditAssetNumber('');
+    setEditLoginId('');
   };
 
   const calculateStats = () => {
@@ -139,6 +143,12 @@ const CentralDatabase = ({ darkMode }) => {
                         onChange={(e) => setEditAssetNumber(e.target.value)}
                         className={`block w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none sm:text-sm ${darkMode ? 'bg-gray-800 border-gray-600 text-gray-300' : 'border-gray-300 bg-white text-gray-900'}`}
                       />
+                      <input
+                        type="text"
+                        value={editLoginId}
+                        onChange={(e) => setEditLoginId(e.target.value)}
+                        className={`block w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none sm:text-sm mt-2 ${darkMode ? 'bg-gray-800 border-gray-600 text-gray-300' : 'border-gray-300 bg-white text-gray-900'}`}
+                      />
                     </>
                   ) : (
                     <>
@@ -207,7 +217,7 @@ const CentralDatabase = ({ darkMode }) => {
                   ) : (
                     <>
                       <button
-                        onClick={() => handleEditAsset(asset.id, asset.asset_number)}
+                        onClick={() => handleEditAsset(asset.id, asset.asset_number, asset.login_id)}
                         className={`px-2 py-1 rounded-md ${darkMode ? 'bg-blue-600 text-gray-100 hover:bg-blue-700' : 'bg-blue-500 text-white hover:bg-blue-600'}`}
                       >
                         <FontAwesomeIcon icon={faEdit} />
