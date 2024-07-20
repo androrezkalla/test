@@ -8,6 +8,7 @@ const CentralDatabase = ({ darkMode }) => {
   const [editAssetId, setEditAssetId] = useState(null);
   const [editAssetNumber, setEditAssetNumber] = useState('');
   const [editLoginId, setEditLoginId] = useState('');
+  const [editBusinessGroup, setEditBusinessGroup] = useState('');
 
   useEffect(() => {
     fetchAssets();
@@ -40,10 +41,11 @@ const CentralDatabase = ({ darkMode }) => {
     }
   };
 
-  const handleEditAsset = (assetId, assetNumber, loginId) => {
+  const handleEditAsset = (assetId, assetNumber, loginId, businessGroup) => {
     setEditAssetId(assetId);
     setEditAssetNumber(assetNumber);
     setEditLoginId(loginId);
+    setEditBusinessGroup(businessGroup);
   };
 
   const handleSaveEdit = async (assetId) => {
@@ -53,7 +55,11 @@ const CentralDatabase = ({ darkMode }) => {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ asset_number: editAssetNumber, login_id: editLoginId }),
+        body: JSON.stringify({
+          asset_number: editAssetNumber,
+          login_id: editLoginId,
+          business_group: editBusinessGroup
+        }),
       });
       if (!response.ok) {
         throw new Error('Failed to save asset');
@@ -63,6 +69,7 @@ const CentralDatabase = ({ darkMode }) => {
       setEditAssetId(null);
       setEditAssetNumber('');
       setEditLoginId('');
+      setEditBusinessGroup('');
     } catch (error) {
       console.error('Failed to edit asset:', error);
     }
@@ -72,6 +79,7 @@ const CentralDatabase = ({ darkMode }) => {
     setEditAssetId(null);
     setEditAssetNumber('');
     setEditLoginId('');
+    setEditBusinessGroup('');
   };
 
   const calculateStats = () => {
@@ -155,11 +163,21 @@ const CentralDatabase = ({ darkMode }) => {
                           className={`block w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none sm:text-sm ${darkMode ? 'bg-gray-800 border-gray-600 text-gray-300' : 'border-gray-300 bg-white text-gray-900'}`}
                         />
                       </label>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mt-2">
+                        Business Group
+                        <input
+                          type="text"
+                          value={editBusinessGroup}
+                          onChange={(e) => setEditBusinessGroup(e.target.value)}
+                          className={`block w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none sm:text-sm ${darkMode ? 'bg-gray-800 border-gray-600 text-gray-300' : 'border-gray-300 bg-white text-gray-900'}`}
+                        />
+                      </label>
                     </>
                   ) : (
                     <>
                       <p className={`text-lg ${darkMode ? 'text-gray-100' : 'text-gray-900'}`}>{asset.asset_number}</p>
                       <p className={`text-sm ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>Login ID: {asset.login_id}</p>
+                      <p className={`text-sm ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>Business Group: {asset.business_group}</p>
                       <p className={`text-sm ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>Batch Date: {new Date(asset.batch_date).toLocaleDateString()}</p>
                       <p className={`text-sm ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>Technician: {asset.technician}</p>
                     </>
@@ -223,7 +241,7 @@ const CentralDatabase = ({ darkMode }) => {
                   ) : (
                     <>
                       <button
-                        onClick={() => handleEditAsset(asset.id, asset.asset_number, asset.login_id)}
+                        onClick={() => handleEditAsset(asset.id, asset.asset_number, asset.login_id, asset.business_group)}
                         className={`px-2 py-1 rounded-md ${darkMode ? 'bg-blue-600 text-gray-100 hover:bg-blue-700' : 'bg-blue-500 text-white hover:bg-blue-600'}`}
                       >
                         <FontAwesomeIcon icon={faEdit} />
