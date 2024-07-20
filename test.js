@@ -37,24 +37,16 @@ const Batch = ({ darkMode }) => {
     if (newAssets.length > 0) {
       setAssets([...assets, ...newAssets]);
       setNewAssetsInput('');
-      setAssetDetails(prevDetails => ({
-        ...prevDetails,
-        ...newAssets.reduce((acc, asset) => ({
-          ...acc,
-          [asset]: { loginId: '', businessGroup: '' }
-        }), {})
-      }));
+      setAssetDetails({ ...assetDetails, ...newAssets.reduce((acc, asset) => ({ ...acc, [asset]: { loginId: '', businessGroup: '' } }), {}) });
     }
   };
 
   const handleRemoveAsset = (index) => {
-    const assetToRemove = assets[index];
     const updatedAssets = assets.filter((_, i) => i !== index);
+    const updatedAssetDetails = { ...assetDetails };
+    delete updatedAssetDetails[assets[index]];
     setAssets(updatedAssets);
-    setAssetDetails(prevDetails => {
-      const { [assetToRemove]: removed, ...remaining } = prevDetails;
-      return remaining;
-    });
+    setAssetDetails(updatedAssetDetails);
   };
 
   const handleBatchSubmit = async (e) => {
@@ -120,16 +112,6 @@ const Batch = ({ darkMode }) => {
       e.preventDefault();
       handleAddAssets();
     }
-  };
-
-  const handleAssetDetailChange = (asset, field, value) => {
-    setAssetDetails(prevDetails => ({
-      ...prevDetails,
-      [asset]: {
-        ...prevDetails[asset],
-        [field]: value
-      }
-    }));
   };
 
   return (
@@ -219,16 +201,22 @@ const Batch = ({ darkMode }) => {
                   <input
                     type="text"
                     className="px-2 py-1 border rounded-md w-40"
-                    placeholder="Login ID"
+                    placeholder="Login ID "
                     value={assetDetails[asset]?.loginId || ''}
-                    onChange={(e) => handleAssetDetailChange(asset, 'loginId', e.target.value)}
+                    onChange={(e) => setAssetDetails({
+                      ...assetDetails,
+                      [asset]: { ...assetDetails[asset], loginId: e.target.value }
+                    })}
                   />
                   <input
                     type="text"
                     className="px-2 py-1 border rounded-md w-40"
-                    placeholder="Business Group"
+                    placeholder="Business Group "
                     value={assetDetails[asset]?.businessGroup || ''}
-                    onChange={(e) => handleAssetDetailChange(asset, 'businessGroup', e.target.value)}
+                    onChange={(e) => setAssetDetails({
+                      ...assetDetails,
+                      [asset]: { ...assetDetails[asset], businessGroup: e.target.value }
+                    })}
                   />
                 </div>
                 <button
