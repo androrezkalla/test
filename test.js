@@ -113,13 +113,14 @@ const CentralDatabase = ({ darkMode }) => {
   const handleFetchUserInfo = async (loginId) => {
     setLoadingUserInfo(loginId);
     try {
-      const script = `Get-ADUser -Filter {SamAccountName -eq '${loginId}'} -Properties * | Select GivenName,Surname,SamAccountName,EmployeeID,HomeDirectory,SID`;
       const response = await fetch('http://localhost:5000/api/run-powershell', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ script }),
+        body: JSON.stringify({
+          script: `Get-ADUser -Filter {SamAccountName -eq '${loginId}'} -Properties GivenName,Surname,SamAccountName,EmployeeID,HomeDirectory,SID | Select GivenName,Surname,SamAccountName,EmployeeID,HomeDirectory,SID`
+        }),
       });
 
       const data = await response.json();
