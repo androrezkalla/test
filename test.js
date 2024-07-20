@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faTrashAlt, faEdit, faSave, faTimes, faFileExcel, faUser } from '@fortawesome/free-solid-svg-icons';
+import { faTrashAlt, faEdit, faSave, faTimes, faFileExcel, faUser, faSync } from '@fortawesome/free-solid-svg-icons';
 import * as XLSX from 'xlsx';
 
 const CentralDatabase = ({ darkMode }) => {
@@ -11,6 +11,7 @@ const CentralDatabase = ({ darkMode }) => {
   const [editBusinessGroup, setEditBusinessGroup] = useState('');
   const [userInfo, setUserInfo] = useState({});
   const [loadingUserInfo, setLoadingUserInfo] = useState('');
+  const [loadingAllUsers, setLoadingAllUsers] = useState(false);
 
   useEffect(() => {
     fetchAssets();
@@ -140,14 +141,20 @@ const CentralDatabase = ({ darkMode }) => {
     }
   };
 
+  const handleFetchAllUserInfo = async () => {
+    setLoadingAllUsers(true);
+    const userInfoPromises = assets.map(asset => handleFetchUserInfo(asset.login_id));
+    await Promise.all(userInfoPromises);
+    setLoadingAllUsers(false);
+  };
+
   const formatUserInfo = (output) => {
-    // Format the output to a more readable format
     return output
-      .replace(/\r\n/g, '\n') // Normalize newlines
-      .split('\n') // Split into lines
-      .map(line => line.trim()) // Trim each line
-      .filter(line => line.length > 0) // Remove empty lines
-      .join('\n'); // Join back into a single string
+      .replace(/\r\n/g, '\n')
+      .split('\n')
+      .map(line => line.trim())
+      .filter(line => line.length > 0)
+      .join('\n');
   };
 
   const stats = calculateStats();
@@ -175,6 +182,14 @@ const CentralDatabase = ({ darkMode }) => {
           className={`px-4 py-2 rounded-md ${darkMode ? 'bg-green-600 text-gray-100 hover:bg-green-700' : 'bg-green-500 text-white hover:bg-green-600'}`}
         >
           <FontAwesomeIcon icon={faFileExcel} className="mr-2" />Export to Excel
+        </button>
+        <button
+          onClick={handleFetchAllUserInfo}
+          className={`ml-4 px-4 py-2 rounded-md ${darkMode ? 'bg-blue-600 text-gray-100 hover:bg-blue-700' : 'bg-blue-500 text-white hover:bg-blue-600'}`}
+          disabled={loadingAllUsers}
+        >
+          <FontAwesomeIcon icon={faSync} className="mr-2" />
+          {loadingAllUsers ? 'Fetching...' : 'Fetch All User Info'}
         </button>
       </div>
 
