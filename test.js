@@ -12,7 +12,7 @@ const Batch = ({ darkMode }) => {
   const [technicians, setTechnicians] = useState([]);
   const [assets, setAssets] = useState([]);
   const [newAssetsInput, setNewAssetsInput] = useState('');
-  const [assetDetails, setAssetDetails] = useState({}); // Store login ID and business group details
+  const [assetDetails, setAssetDetails] = useState({});
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalType, setModalType] = useState('');
@@ -37,10 +37,7 @@ const Batch = ({ darkMode }) => {
     if (newAssets.length > 0) {
       setAssets([...assets, ...newAssets]);
       setNewAssetsInput('');
-      setAssetDetails(prevDetails => ({
-        ...prevDetails,
-        ...newAssets.reduce((acc, asset) => ({ ...acc, [asset]: { loginId: '', businessGroup: '' } }), {})
-      }));
+      setAssetDetails({ ...assetDetails, ...newAssets.reduce((acc, asset) => ({ ...acc, [asset]: { loginId: '', businessGroup: '' } }), {}) });
     }
   };
 
@@ -54,22 +51,17 @@ const Batch = ({ darkMode }) => {
 
   const handleBatchSubmit = async (e) => {
     e.preventDefault();
-
-    // Log the assetDetails to verify it contains the correct data
-    console.log('Asset Details:', assetDetails);
-
     const batchData = {
       batchDate,
       technician,
       assets: assets.map(asset => ({
         asset_number: asset,
         login_id: assetDetails[asset]?.loginId || '',
-        business_group: assetDetails[asset]?.businessGroup || '' // Ensure this matches the API expectation
+        business_group: assetDetails[asset]?.businessGroup || ''
       })),
     };
 
-    // Log the batchData to verify it's being set correctly
-    console.log('Batch Data:', batchData);
+    console.log("Submitting Batch Data:", batchData);
 
     try {
       const response = await axios.post('http://localhost:5000/api/assets', batchData);
@@ -127,7 +119,6 @@ const Batch = ({ darkMode }) => {
     <div className={`container mx-auto p-4 max-w-screen-md ${darkMode ? 'dark' : ''}`}>
       <h1 className="text-2xl font-bold mb-4 mt-20 text-center text-gray-900 dark:text-gray-100">Batch Asset Management</h1>
       <form onSubmit={handleBatchSubmit} className="space-y-4">
-        {/* Date Input */}
         <div>
           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Batch Date</label>
           <input
@@ -139,7 +130,6 @@ const Batch = ({ darkMode }) => {
           />
         </div>
 
-        {/* Technician Input */}
         <div className="mt-4">
           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Technician</label>
           <div className="relative">
@@ -182,7 +172,6 @@ const Batch = ({ darkMode }) => {
           </div>
         </div>
 
-        {/* Assets Input */}
         <div>
           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Assets</label>
           <div className="flex space-x-2">
@@ -206,11 +195,31 @@ const Batch = ({ darkMode }) => {
             {assets.map((asset, index) => (
               <li key={index} className={`flex items-center px-3 py-2 border ${darkMode ? 'border-gray-600' : 'border-gray-300'}`}>
                 <span className={`w-32 ${darkMode ? 'text-gray-300' : 'text-gray-900'}`}>{asset}</span>
-                <div className="ml-auto flex space-x-2">
+                <div className="flex space-x-2 ml-4">
+                  <input
+                    type="text"
+                    className="px-2 py-1 border rounded-md w-40"
+                    placeholder="Login ID"
+                    value={assetDetails[asset]?.loginId || ''}
+                    onChange={(e) => setAssetDetails({
+                      ...assetDetails,
+                      [asset]: { ...assetDetails[asset], loginId: e.target.value }
+                    })}
+                  />
+                  <input
+                    type="text"
+                    className="px-2 py-1 border rounded-md w-40"
+                    placeholder="Business Group"
+                    value={assetDetails[asset]?.businessGroup || ''}
+                    onChange={(e) => setAssetDetails({
+                      ...assetDetails,
+                      [asset]: { ...assetDetails[asset], businessGroup: e.target.value }
+                    })}
+                  />
                   <button
                     type="button"
                     onClick={() => handleRemoveAsset(index)}
-                    className={`text-red-500 hover:text-red-700 ${darkMode ? 'hover:bg-gray-600' : 'hover:bg-gray-100'}`}
+                    className="text-red-500 hover:text-red-700"
                   >
                     <FontAwesomeIcon icon={faTrashAlt} />
                   </button>
@@ -220,80 +229,40 @@ const Batch = ({ darkMode }) => {
           </ul>
         </div>
 
-        {/* Asset Details */}
-        <div className="mt-4">
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Asset Details</label>
-          {assets.map((asset, index) => (
-            <div key={index} className="border p-4 mb-2 rounded-md bg-gray-50 dark:bg-gray-800">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Asset: {asset}</h3>
-              <div className="mt-2">
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Login ID</label>
-                <input
-                  type="text"
-                  className={`mt-1 block w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm ${darkMode ? 'bg-gray-800 border-gray-600 text-gray-300' : 'border-gray-300 bg-white text-gray-900'}`}
-                  placeholder="Login ID"
-                  value={assetDetails[asset]?.loginId || ''}
-                  onChange={(e) => setAssetDetails(prevDetails => ({
-                    ...prevDetails,
-                    [asset]: { ...prevDetails[asset], loginId: e.target.value }
-                  }))}
-                />
-              </div>
-              <div className="mt-2">
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Business Group</label>
-                <input
-                  type="text"
-                  className={`mt-1 block w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm ${darkMode ? 'bg-gray-800 border-gray-600 text-gray-300' : 'border-gray-300 bg-white text-gray-900'}`}
-                  placeholder="Business Group"
-                  value={assetDetails[asset]?.businessGroup || ''}
-                  onChange={(e) => setAssetDetails(prevDetails => ({
-                    ...prevDetails,
-                    [asset]: { ...prevDetails[asset], businessGroup: e.target.value }
-                  }))}
-                />
-              </div>
-            </div>
-          ))}
-        </div>
-
-        {/* Submit Button */}
-        <div className="flex justify-end mt-4">
-          <button
-            type="submit"
-            className={`px-4 py-2 rounded-md ${darkMode ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' : 'bg-blue-500 text-white hover:bg-blue-600'}`}
-          >
-            Submit Batch
-          </button>
-        </div>
+        <button
+          type="submit"
+          className={`mt-4 px-4 py-2 rounded-md ${darkMode ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' : 'bg-blue-500 text-white hover:bg-blue-600'}`}
+        >
+          Submit Batch
+        </button>
       </form>
 
-      {/* Modal */}
+      {/* Modal for Adding/Editing Technicians */}
       {isModalOpen && (
         <div className="fixed inset-0 flex items-center justify-center bg-gray-800 bg-opacity-50 z-50">
-          <div className={`bg-white dark:bg-gray-800 p-6 rounded-md shadow-lg ${darkMode ? 'border border-gray-600' : 'border border-gray-300'}`}>
+          <div className={`bg-white p-4 rounded-md shadow-lg ${darkMode ? 'bg-gray-800 text-gray-300' : 'bg-white text-gray-900'}`}>
             <h2 className="text-xl font-bold mb-4">{modalType === 'add' ? 'Add Technician' : 'Edit Technician'}</h2>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Technician Name</label>
             <input
               type="text"
               className={`mt-1 block w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm ${darkMode ? 'bg-gray-800 border-gray-600 text-gray-300' : 'border-gray-300 bg-white text-gray-900'}`}
               value={technicianName}
               onChange={(e) => setTechnicianName(e.target.value)}
-              required
+              placeholder="Technician Name"
             />
-            <div className="mt-4 flex justify-end space-x-4">
+            <div className="flex justify-end mt-4">
               <button
                 type="button"
                 onClick={() => setIsModalOpen(false)}
-                className={`px-4 py-2 rounded-md ${darkMode ? 'bg-gray-600 text-gray-300 hover:bg-gray-500' : 'bg-gray-300 text-gray-900 hover:bg-gray-400'}`}
+                className={`px-4 py-2 rounded-md ${darkMode ? 'bg-gray-600 text-gray-300 hover:bg-gray-500' : 'bg-gray-300 text-gray-800 hover:bg-gray-400'}`}
               >
                 Cancel
               </button>
               <button
                 type="button"
                 onClick={handleModalSubmit}
-                className={`px-4 py-2 rounded-md ${darkMode ? 'bg-blue-600 text-gray-300 hover:bg-blue-500' : 'bg-blue-500 text-white hover:bg-blue-600'}`}
+                className={`ml-2 px-4 py-2 rounded-md ${modalType === 'add' ? (darkMode ? 'bg-green-600 text-gray-300 hover:bg-green-500' : 'bg-green-500 text-white hover:bg-green-600') : (darkMode ? 'bg-yellow-600 text-gray-300 hover:bg-yellow-500' : 'bg-yellow-500 text-white hover:bg-yellow-600')}`}
               >
-                {modalType === 'add' ? 'Add Technician' : 'Save Changes'}
+                {modalType === 'add' ? 'Add' : 'Save'}
               </button>
             </div>
           </div>
