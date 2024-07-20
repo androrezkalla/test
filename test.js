@@ -118,8 +118,8 @@ const CentralDatabase = ({ darkMode }) => {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          script: `Get-ADUser -Filter {SamAccountName -eq '${loginId}'} -Properties GivenName,Surname,SamAccountName,EmployeeID,HomeDirectory,SID | Select GivenName,Surname,SamAccountName,EmployeeID,HomeDirectory,SID`
+        body: JSON.stringify({ 
+          script: `Get-ADUser -Filter {SamAccountName -eq '${loginId}'} -Properties * | Select GivenName,Surname,SamAccountName,EmployeeID,HomeDirectory,SID`
         }),
       });
 
@@ -153,6 +153,7 @@ const CentralDatabase = ({ darkMode }) => {
           <div>Total Assets: {stats.total_assets}</div>
           <div>Imaging Complete: {stats.imaging_complete}</div>
           <div>YNX1C Complete: {stats.ynx1c_complete}</div>
+          <div>Business Bundles Complete: {stats.business_bundles_complete}</div>
           <div>RSA Complete: {stats.rsa_complete}</div>
         </div>
       </div>
@@ -210,56 +211,51 @@ const CentralDatabase = ({ darkMode }) => {
                       <div className="text-lg font-semibold text-gray-900 dark:text-gray-100">Asset Number: {asset.asset_number}</div>
                       <div className="text-sm text-gray-700 dark:text-gray-300">Login ID: {asset.login_id}</div>
                       <div className="text-sm text-gray-700 dark:text-gray-300">Business Group: {asset.business_group}</div>
-                      {/* Add user info */}
                       {userInfo[asset.login_id] && (
-                        <div className="mt-2 p-2 border rounded-md bg-gray-50 dark:bg-gray-700">
-                          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">User Info</h3>
-                          <pre className="text-sm text-gray-700 dark:text-gray-300">{JSON.stringify(userInfo[asset.login_id], null, 2)}</pre>
-                        </div>
+                        <pre className="mt-2 bg-gray-100 p-2 rounded-lg shadow-sm dark:bg-gray-800 dark:text-gray-300">
+                          {JSON.stringify(userInfo[asset.login_id], null, 2)}
+                        </pre>
                       )}
-                      <div className="mt-2">
-                        <button
-                          onClick={() => handleFetchUserInfo(asset.login_id)}
-                          className={`px-3 py-1 rounded-md ${darkMode ? 'bg-blue-600 text-gray-100 hover:bg-blue-700' : 'bg-blue-500 text-white hover:bg-blue-600'}`}
-                          disabled={loadingUserInfo === asset.login_id}
-                        >
-                          <FontAwesomeIcon icon={faUser} className="mr-2" />
-                          {loadingUserInfo === asset.login_id ? 'Loading...' : 'Fetch User Info'}
-                        </button>
-                      </div>
-                      <div className="flex mt-2">
-                        {editAssetId === asset.id ? (
-                          <>
-                            <button
-                              onClick={() => handleSaveEdit(asset.id)}
-                              className={`px-4 py-2 rounded-md ${darkMode ? 'bg-blue-600 text-gray-100 hover:bg-blue-700' : 'bg-blue-500 text-white hover:bg-blue-600'}`}
-                            >
-                              <FontAwesomeIcon icon={faSave} className="mr-2" /> Save
-                            </button>
-                            <button
-                              onClick={handleCancelEdit}
-                              className={`px-4 py-2 rounded-md ${darkMode ? 'bg-gray-600 text-gray-100 hover:bg-gray-700' : 'bg-gray-400 text-gray-900 hover:bg-gray-500'}`}
-                            >
-                              <FontAwesomeIcon icon={faTimes} className="mr-2" /> Cancel
-                            </button>
-                          </>
-                        ) : (
-                          <>
-                            <button
-                              onClick={() => handleEditAsset(asset.id, asset.asset_number, asset.login_id, asset.business_group)}
-                              className={`px-4 py-2 rounded-md ${darkMode ? 'bg-yellow-600 text-gray-100 hover:bg-yellow-700' : 'bg-yellow-500 text-white hover:bg-yellow-600'}`}
-                            >
-                              <FontAwesomeIcon icon={faEdit} className="mr-2" /> Edit
-                            </button>
-                            <button
-                              onClick={() => handleDeleteAsset(asset.id)}
-                              className={`px-4 py-2 rounded-md ${darkMode ? 'bg-red-600 text-gray-100 hover:bg-red-700' : 'bg-red-500 text-white hover:bg-red-600'}`}
-                            >
-                              <FontAwesomeIcon icon={faTrashAlt} className="mr-2" /> Delete
-                            </button>
-                          </>
-                        )}
-                      </div>
+                    </>
+                  )}
+                </div>
+                <div className="flex items-center space-x-2">
+                  {editAssetId === asset.id ? (
+                    <>
+                      <button
+                        onClick={() => handleSaveEdit(asset.id)}
+                        className={`p-2 rounded-md ${darkMode ? 'bg-green-600 text-gray-100 hover:bg-green-700' : 'bg-green-500 text-white hover:bg-green-600'}`}
+                      >
+                        <FontAwesomeIcon icon={faSave} />
+                      </button>
+                      <button
+                        onClick={handleCancelEdit}
+                        className={`p-2 rounded-md ${darkMode ? 'bg-red-600 text-gray-100 hover:bg-red-700' : 'bg-red-500 text-white hover:bg-red-600'}`}
+                      >
+                        <FontAwesomeIcon icon={faTimes} />
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <button
+                        onClick={() => handleEditAsset(asset.id, asset.asset_number, asset.login_id, asset.business_group)}
+                        className={`p-2 rounded-md ${darkMode ? 'bg-blue-600 text-gray-100 hover:bg-blue-700' : 'bg-blue-500 text-white hover:bg-blue-600'}`}
+                      >
+                        <FontAwesomeIcon icon={faEdit} />
+                      </button>
+                      <button
+                        onClick={() => handleDeleteAsset(asset.id)}
+                        className={`p-2 rounded-md ${darkMode ? 'bg-red-600 text-gray-100 hover:bg-red-700' : 'bg-red-500 text-white hover:bg-red-600'}`}
+                      >
+                        <FontAwesomeIcon icon={faTrashAlt} />
+                      </button>
+                      <button
+                        onClick={() => handleFetchUserInfo(asset.login_id)}
+                        className={`p-2 rounded-md ${darkMode ? 'bg-yellow-600 text-gray-100 hover:bg-yellow-700' : 'bg-yellow-500 text-white hover:bg-yellow-600'}`}
+                      >
+                        <FontAwesomeIcon icon={faUser} />
+                        {loadingUserInfo === asset.login_id && '...'}
+                      </button>
                     </>
                   )}
                 </div>
