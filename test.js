@@ -137,18 +137,24 @@ const CentralDatabase = ({ darkMode }) => {
                 <div>
                   {editAssetId === asset.id ? (
                     <>
-                      <input
-                        type="text"
-                        value={editAssetNumber}
-                        onChange={(e) => setEditAssetNumber(e.target.value)}
-                        className={`block w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none sm:text-sm ${darkMode ? 'bg-gray-800 border-gray-600 text-gray-300' : 'border-gray-300 bg-white text-gray-900'}`}
-                      />
-                      <input
-                        type="text"
-                        value={editLoginId}
-                        onChange={(e) => setEditLoginId(e.target.value)}
-                        className={`block w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none sm:text-sm mt-2 ${darkMode ? 'bg-gray-800 border-gray-600 text-gray-300' : 'border-gray-300 bg-white text-gray-900'}`}
-                      />
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                        Asset Number
+                        <input
+                          type="text"
+                          value={editAssetNumber}
+                          onChange={(e) => setEditAssetNumber(e.target.value)}
+                          className={`block w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none sm:text-sm ${darkMode ? 'bg-gray-800 border-gray-600 text-gray-300' : 'border-gray-300 bg-white text-gray-900'}`}
+                        />
+                      </label>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mt-2">
+                        Login ID
+                        <input
+                          type="text"
+                          value={editLoginId}
+                          onChange={(e) => setEditLoginId(e.target.value)}
+                          className={`block w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none sm:text-sm ${darkMode ? 'bg-gray-800 border-gray-600 text-gray-300' : 'border-gray-300 bg-white text-gray-900'}`}
+                        />
+                      </label>
                     </>
                   ) : (
                     <>
