@@ -128,7 +128,7 @@ const CentralDatabase = ({ darkMode }) => {
       if (response.ok) {
         setUserInfo((prevUserInfo) => ({
           ...prevUserInfo,
-          [loginId]: data.output
+          [loginId]: formatUserInfo(data.output)
         }));
       } else {
         console.error('Failed to fetch user info:', data.error);
@@ -138,6 +138,16 @@ const CentralDatabase = ({ darkMode }) => {
     } finally {
       setLoadingUserInfo('');
     }
+  };
+
+  const formatUserInfo = (output) => {
+    // Format the output to a more readable format
+    return output
+      .replace(/\r\n/g, '\n') // Normalize newlines
+      .split('\n') // Split into lines
+      .map(line => line.trim()) // Trim each line
+      .filter(line => line.length > 0) // Remove empty lines
+      .join('\n'); // Join back into a single string
   };
 
   const stats = calculateStats();
@@ -208,12 +218,12 @@ const CentralDatabase = ({ darkMode }) => {
                     </>
                   ) : (
                     <>
-                      <div className="text-lg font-semibold text-gray-900 dark:text-gray-100">Asset Number: {asset.asset_number}</div>
-                      <div className="text-sm text-gray-700 dark:text-gray-300">Login ID: {asset.login_id}</div>
-                      <div className="text-sm text-gray-700 dark:text-gray-300">Business Group: {asset.business_group}</div>
+                      <div>Asset Number: {asset.asset_number}</div>
+                      <div>Login ID: {asset.login_id}</div>
+                      <div>Business Group: {asset.business_group}</div>
                       {userInfo[asset.login_id] && (
                         <pre className="mt-2 bg-gray-100 p-2 rounded-lg shadow-sm dark:bg-gray-800 dark:text-gray-300">
-                          {JSON.stringify(userInfo[asset.login_id], null, 2)}
+                          {userInfo[asset.login_id]}
                         </pre>
                       )}
                     </>
