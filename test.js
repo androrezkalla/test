@@ -1,61 +1,26 @@
-const handleFetchUserInfo = async (loginId) => {
-  setLoadingUserInfo(loginId);
-  try {
-    const response = await fetch('http://localhost:5000/api/run-powershell', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ 
-        script: `Get-ADUser -Filter {SamAccountName -eq '${loginId}'} -Properties * | Select GivenName,Surname,SamAccountName,EmployeeID,HomeDirectory,SID`
-      }),
-    });
-
-    const data = await response.json();
-
-    if (response.ok && data.output) {
-      const parsedUserInfo = parsePowerShellOutput(data.output);
-      setUserInfo((prevUserInfo) => ({
-        ...prevUserInfo,
-        [loginId]: parsedUserInfo,
-      }));
-    } else {
-      setUserInfo((prevUserInfo) => ({
-        ...prevUserInfo,
-        [loginId]: 'No User Found'
-      }));
-    }
-  } catch (error) {
-    console.error('Failed to fetch user info:', error);
-    setUserInfo((prevUserInfo) => ({
-      ...prevUserInfo,
-      [loginId]: 'No User Found'
-    }));
-  } finally {
-    setLoadingUserInfo('');
-  }
-};
-
-const parsePowerShellOutput = (output) => {
-  const lines = output.split('\r\n');
-  const parsedOutput = {};
-
-  lines.forEach(line => {
-    const [key, value] = line.split(':');
-    if (key && value) {
-      parsedOutput[key.trim()] = value.trim();
-    }
-  });
-
-  return parsedOutput;
-};
-
-const mergeData = () => {
-  return assets.map(asset => {
-    const userInfoData = userInfo[asset.login_id] || {};
-    return {
-      ...asset,
-      ...userInfoData,
-    };
-  });
-};
+<configuration>
+  <system.webServer>
+    <rewrite>
+      <rules>
+        <!-- Rule to route API requests to the backend -->
+        <rule name="ReverseProxyRule" stopProcessing="true">
+          <match url="^api/(.*)" />
+          <conditions>
+            <add input="{REQUEST_FILENAME}" matchType="IsFile" negate="true" />
+            <add input="{REQUEST_FILENAME}" matchType="IsDirectory" negate="true" />
+          </conditions>
+          <action type="Rewrite" url="http://localhost:3000/{R:1}" />
+        </rule>
+        <!-- Rule to handle React routes for client-side routing -->
+        <rule name="ReactRoutes" stopProcessing="true">
+          <match url=".*" />
+          <conditions>
+            <add input="{REQUEST_FILENAME}" matchType="IsFile" negate="true" />
+            <add input="{REQUEST_FILENAME}" matchType="IsDirectory" negate="true" />
+          </conditions>
+          <action type="Rewrite" url="/" />
+        </rule>
+      </rules>
+    </rewrite>
+  </system.webServer>
+</configuration>
