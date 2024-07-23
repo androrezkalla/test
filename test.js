@@ -175,43 +175,52 @@ const AssetTable = ({ darkMode }) => {
                     </td>
                   ))}
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-gray-100">
-                    {editAssetId === row.original.id ? (
-                      <>
-                        <button
-                          onClick={handleSaveClick}
-                          className={`px-3 py-1 rounded-md ${darkMode ? 'bg-green-600 text-gray-100 hover:bg-green-700' : 'bg-green-500 text-white hover:bg-green-600'}`}
-                        >
-                          <FontAwesomeIcon icon={faSave} />
-                        </button>
-                        <button
-                          onClick={handleCancelEdit}
-                          className={`ml-2 px-3 py-1 rounded-md ${darkMode ? 'bg-red-600 text-gray-100 hover:bg-red-700' : 'bg-red-500 text-white hover:bg-red-600'}`}
-                        >
-                          <FontAwesomeIcon icon={faTimes} />
-                        </button>
-                      </>
-                    ) : (
-                      <>
-                        <button
-                          onClick={() => handleEditClick(row.original)}
-                          className={`px-3 py-1 rounded-md ${darkMode ? 'bg-blue-600 text-gray-100 hover:bg-blue-700' : 'bg-blue-500 text-white hover:bg-blue-600'}`}
-                        >
-                          <FontAwesomeIcon icon={faEdit} />
-                        </button>
-                        <button
-                          onClick={() => handleDelete(row.original.id)}
-                          className={`ml-2 px-3 py-1 rounded-md ${darkMode ? 'bg-red-600 text-gray-100 hover:bg-red-700' : 'bg-red-500 text-white hover:bg-red-600'}`}
-                        >
-                          <FontAwesomeIcon icon={faTrashAlt} />
-                        </button>
-                      </>
-                    )}
+                    {/* Placeholder for action buttons */}
                   </td>
                 </tr>
               );
             })}
           </tbody>
         </table>
+      </div>
+
+      <div className="mt-4">
+        {assets.map(asset => (
+          <div key={asset.id} className="flex justify-between items-center border-t border-gray-200 dark:border-gray-700 pt-2">
+            <span className="text-sm font-medium text-gray-900 dark:text-gray-100">{asset.asset_number}</span>
+            {editAssetId === asset.id ? (
+              <>
+                <button
+                  onClick={handleSaveClick}
+                  className={`px-3 py-1 rounded-md ${darkMode ? 'bg-green-600 text-gray-100 hover:bg-green-700' : 'bg-green-500 text-white hover:bg-green-600'}`}
+                >
+                  <FontAwesomeIcon icon={faSave} />
+                </button>
+                <button
+                  onClick={handleCancelEdit}
+                  className={`ml-2 px-3 py-1 rounded-md ${darkMode ? 'bg-red-600 text-gray-100 hover:bg-red-700' : 'bg-red-500 text-white hover:bg-red-600'}`}
+                >
+                  <FontAwesomeIcon icon={faTimes} />
+                </button>
+              </>
+            ) : (
+              <>
+                <button
+                  onClick={() => handleEditClick(asset)}
+                  className={`px-3 py-1 rounded-md ${darkMode ? 'bg-blue-600 text-gray-100 hover:bg-blue-700' : 'bg-blue-500 text-white hover:bg-blue-600'}`}
+                >
+                  <FontAwesomeIcon icon={faEdit} />
+                </button>
+                <button
+                  onClick={() => handleDelete(asset.id)}
+                  className={`ml-2 px-3 py-1 rounded-md ${darkMode ? 'bg-red-600 text-gray-100 hover:bg-red-700' : 'bg-red-500 text-white hover:bg-red-600'}`}
+                >
+                  <FontAwesomeIcon icon={faTrashAlt} />
+                </button>
+              </>
+            )}
+          </div>
+        ))}
       </div>
     </div>
   );
