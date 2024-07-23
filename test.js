@@ -38,7 +38,7 @@ const AssetTable = ({ darkMode }) => {
       {
         Header: 'Business Group',
         accessor: 'business_group',
-        Filter: SelectColumnFilter,
+        Filter: SelectColumnFilter, // Adding filter to this column
         filter: 'includes',
       },
       {
@@ -63,9 +63,9 @@ const AssetTable = ({ darkMode }) => {
       columns,
       data: assets,
     },
-    useFilters,
-    useGlobalFilter,
-    useSortBy
+    useFilters, // Use useFilters!
+    useGlobalFilter, // Use useGlobalFilter!
+    useSortBy // Use useSortBy!
   );
 
   return (
