@@ -1,12 +1,14 @@
 import React, { useEffect, useState } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faSave, faTimes, faEdit, faTrashAlt } from '@fortawesome/free-solid-svg-icons';
+import { faSave, faTimes, faEdit, faTrashAlt, faFileExcel } from '@fortawesome/free-solid-svg-icons';
 import { useTable, useFilters, useSortBy } from 'react-table';
+import * as XLSX from 'xlsx';
 
 const AssetTable = ({ darkMode }) => {
   const [assets, setAssets] = useState([]);
   const [editAssetId, setEditAssetId] = useState(null);
   const [editValues, setEditValues] = useState({});
+  const [filterInput, setFilterInput] = useState('');
 
   useEffect(() => {
     fetchAssets();
@@ -83,8 +85,34 @@ const AssetTable = ({ darkMode }) => {
     }
   };
 
+  const handleExportToExcel = () => {
+    const ws = XLSX.utils.json_to_sheet(assets);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Assets');
+    XLSX.writeFile(wb, 'assets.xlsx');
+  };
+
   const columns = React.useMemo(
     () => [
+      {
+        Header: 'Employee ID',
+        accessor: 'employee_id',
+      },
+      {
+        Header: 'Business Group',
+        accessor: 'business_group',
+        Filter: ({ column }) => (
+          <input
+            value={filterInput}
+            onChange={(e) => {
+              setFilterInput(e.target.value);
+              column.setFilter(e.target.value);
+            }}
+            placeholder={`Search ${column.Header}`}
+            className={`block w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none sm:text-sm ${darkMode ? 'bg-gray-800 border-gray-600 text-gray-300' : 'border-gray-300 bg-white text-gray-900'}`}
+          />
+        ),
+      },
       {
         Header: 'Asset Number',
         accessor: 'asset_number',
@@ -93,56 +121,8 @@ const AssetTable = ({ darkMode }) => {
         Header: 'Login ID',
         accessor: 'login_id',
       },
-      {
-        Header: 'Business Group',
-        accessor: 'business_group',
-      },
-      {
-        Header: 'Employee ID',
-        accessor: 'employee_id',
-      },
-      {
-        Header: 'Actions',
-        id: 'actions',
-        Cell: ({ row }) => (
-          <div className="flex space-x-2">
-            {editAssetId === row.original.id ? (
-              <>
-                <button
-                  onClick={handleSaveClick}
-                  className={`px-3 py-1 rounded-md ${darkMode ? 'bg-green-600 text-gray-100 hover:bg-green-700' : 'bg-green-500 text-white hover:bg-green-600'}`}
-                >
-                  <FontAwesomeIcon icon={faSave} />
-                </button>
-                <button
-                  onClick={handleCancelEdit}
-                  className={`ml-2 px-3 py-1 rounded-md ${darkMode ? 'bg-red-600 text-gray-100 hover:bg-red-700' : 'bg-red-500 text-white hover:bg-red-600'}`}
-                >
-                  <FontAwesomeIcon icon={faTimes} />
-                </button>
-              </>
-            ) : (
-              <>
-                <button
-                  onClick={() => handleEditClick(row.original)}
-                  className={`px-3 py-1 rounded-md ${darkMode ? 'bg-blue-600 text-gray-100 hover:bg-blue-700' : 'bg-blue-500 text-white hover:bg-blue-600'}`}
-                >
-                  <FontAwesomeIcon icon={faEdit} />
-                </button>
-                <button
-                  onClick={() => handleDelete(row.original.id)}
-                  className={`ml-2 px-3 py-1 rounded-md ${darkMode ? 'bg-red-600 text-gray-100 hover:bg-red-700' : 'bg-red-500 text-white hover:bg-red-600'}`}
-                >
-                  <FontAwesomeIcon icon={faTrashAlt} />
-                </button>
-              </>
-            )}
-          </div>
-        ),
-      },
-      // Add more columns as needed
     ],
-    [darkMode, editAssetId, editValues]
+    [filterInput, darkMode]
   );
 
   const {
@@ -163,7 +143,14 @@ const AssetTable = ({ darkMode }) => {
   return (
     <div className={`container mx-auto p-4 ${darkMode ? 'dark' : ''}`}>
       <h1 className="text-2xl font-bold mb-4 text-center text-gray-900 dark:text-gray-100">Asset Table</h1>
-
+      <div className="mb-4 text-center">
+        <button
+          onClick={handleExportToExcel}
+          className={`px-4 py-2 rounded-md ${darkMode ? 'bg-green-600 text-gray-100 hover:bg-green-700' : 'bg-green-500 text-white hover:bg-green-600'}`}
+        >
+          <FontAwesomeIcon icon={faFileExcel} /> Export to Excel
+        </button>
+      </div>
       <div className="overflow-x-auto">
         <table {...getTableProps()} className="min-w-full bg-white dark:bg-gray-800">
           <thead>
@@ -213,7 +200,39 @@ const AssetTable = ({ darkMode }) => {
                       )}
                     </td>
                   ))}
-                  {/* The new column for actions */}
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-gray-100">
+                    {editAssetId === row.original.id ? (
+                      <>
+                        <button
+                          onClick={handleSaveClick}
+                          className={`px-3 py-1 rounded-md ${darkMode ? 'bg-green-600 text-gray-100 hover:bg-green-700' : 'bg-green-500 text-white hover:bg-green-600'}`}
+                        >
+                          <FontAwesomeIcon icon={faSave} />
+                        </button>
+                        <button
+                          onClick={handleCancelEdit}
+                          className={`ml-2 px-3 py-1 rounded-md ${darkMode ? 'bg-red-600 text-gray-100 hover:bg-red-700' : 'bg-red-500 text-white hover:bg-red-600'}`}
+                        >
+                          <FontAwesomeIcon icon={faTimes} />
+                        </button>
+                      </>
+                    ) : (
+                      <>
+                        <button
+                          onClick={() => handleEditClick(row.original)}
+                          className={`px-3 py-1 rounded-md ${darkMode ? 'bg-blue-600 text-gray-100 hover:bg-blue-700' : 'bg-blue-500 text-white hover:bg-blue-600'}`}
+                        >
+                          <FontAwesomeIcon icon={faEdit} />
+                        </button>
+                        <button
+                          onClick={() => handleDelete(row.original.id)}
+                          className={`ml-2 px-3 py-1 rounded-md ${darkMode ? 'bg-red-600 text-gray-100 hover:bg-red-700' : 'bg-red-500 text-white hover:bg-red-600'}`}
+                        >
+                          <FontAwesomeIcon icon={faTrashAlt} />
+                        </button>
+                      </>
+                    )}
+                  </td>
                 </tr>
               );
             })}
@@ -224,4 +243,4 @@ const AssetTable = ({ darkMode }) => {
   );
 };
 
-export default AssetTable;
+export default
