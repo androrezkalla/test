@@ -1,12 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faSave, faTimes, faEdit, faTrashAlt, faFileExcel } from '@fortawesome/free-solid-svg-icons';
+import { faSave, faTimes, faEdit, faTrashAlt } from '@fortawesome/free-solid-svg-icons';
 import { useTable, useFilters, useSortBy } from 'react-table';
-import * as XLSX from 'xlsx';
 
 const AssetTable = ({ darkMode }) => {
   const [assets, setAssets] = useState([]);
-  const [editMode, setEditMode] = useState(false);
+  const [editAssetId, setEditAssetId] = useState(null);
   const [editValues, setEditValues] = useState({});
 
   useEffect(() => {
@@ -26,28 +25,19 @@ const AssetTable = ({ darkMode }) => {
     }
   };
 
-  const handleExportToExcel = () => {
-    const ws = XLSX.utils.json_to_sheet(assets);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, 'Assets');
-    XLSX.writeFile(wb, 'assets.xlsx');
-  };
-
-  const handleEditAll = () => {
-    setEditMode(!editMode);
-  };
-
-  const handleChange = (e) => {
-    const { name, value } = e.target;
+  const handleEditClick = (asset) => {
+    setEditAssetId(asset.id);
     setEditValues({
-      ...editValues,
-      [name]: value
+      asset_number: asset.asset_number,
+      login_id: asset.login_id,
+      business_group: asset.business_group,
+      employee_id: asset.employee_id
     });
   };
 
   const handleSaveClick = async () => {
     try {
-      const response = await fetch(`http://localhost:5000/api/assets/${editValues.id}`, {
+      const response = await fetch(`http://localhost:5000/api/assets/${editAssetId}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -58,11 +48,38 @@ const AssetTable = ({ darkMode }) => {
         throw new Error('Failed to save asset');
       }
       const updatedAsset = await response.json();
-      setAssets(assets.map((asset) => (asset.id === updatedValues.id ? updatedAsset : asset)));
-      setEditMode(false);
+      setAssets(assets.map((asset) => (asset.id === editAssetId ? updatedAsset : asset)));
+      setEditAssetId(null);
       setEditValues({});
     } catch (error) {
       console.error('Failed to save asset:', error);
+    }
+  };
+
+  const handleCancelEdit = () => {
+    setEditAssetId(null);
+    setEditValues({});
+  };
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setEditValues({
+      ...editValues,
+      [name]: value
+    });
+  };
+
+  const handleDelete = async (assetId) => {
+    try {
+      const response = await fetch(`http://localhost:5000/api/assets/${assetId}`, {
+        method: 'DELETE',
+      });
+      if (!response.ok) {
+        throw new Error('Failed to delete asset');
+      }
+      setAssets(assets.filter((asset) => asset.id !== assetId));
+    } catch (error) {
+      console.error('Failed to delete asset:', error);
     }
   };
 
@@ -71,73 +88,22 @@ const AssetTable = ({ darkMode }) => {
       {
         Header: 'Asset Number',
         accessor: 'asset_number',
-        Cell: ({ row }) => (
-          editMode ? (
-            <input
-              type="text"
-              name="asset_number"
-              value={editValues.asset_number || row.original.asset_number}
-              onChange={handleChange}
-              className={`block w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none sm:text-sm ${darkMode ? 'bg-gray-800 border-gray-600 text-gray-300' : 'border-gray-300 bg-white text-gray-900'}`}
-            />
-          ) : (
-            row.original.asset_number
-          )
-        )
       },
       {
         Header: 'Login ID',
         accessor: 'login_id',
-        Cell: ({ row }) => (
-          editMode ? (
-            <input
-              type="text"
-              name="login_id"
-              value={editValues.login_id || row.original.login_id}
-              onChange={handleChange}
-              className={`block w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none sm:text-sm ${darkMode ? 'bg-gray-800 border-gray-600 text-gray-300' : 'border-gray-300 bg-white text-gray-900'}`}
-            />
-          ) : (
-            row.original.login_id
-          )
-        )
       },
       {
         Header: 'Business Group',
         accessor: 'business_group',
-        Cell: ({ row }) => (
-          editMode ? (
-            <input
-              type="text"
-              name="business_group"
-              value={editValues.business_group || row.original.business_group}
-              onChange={handleChange}
-              className={`block w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none sm:text-sm ${darkMode ? 'bg-gray-800 border-gray-600 text-gray-300' : 'border-gray-300 bg-white text-gray-900'}`}
-            />
-          ) : (
-            row.original.business_group
-          )
-        )
       },
       {
         Header: 'Employee ID',
         accessor: 'employee_id',
-        Cell: ({ row }) => (
-          editMode ? (
-            <input
-              type="text"
-              name="employee_id"
-              value={editValues.employee_id || row.original.employee_id}
-              onChange={handleChange}
-              className={`block w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none sm:text-sm ${darkMode ? 'bg-gray-800 border-gray-600 text-gray-300' : 'border-gray-300 bg-white text-gray-900'}`}
-            />
-          ) : (
-            row.original.employee_id
-          )
-        )
       },
+      // Add more columns as needed
     ],
-    [editMode, darkMode, editValues, assets]
+    []
   );
 
   const {
@@ -158,21 +124,6 @@ const AssetTable = ({ darkMode }) => {
   return (
     <div className={`container mx-auto p-4 ${darkMode ? 'dark' : ''}`}>
       <h1 className="text-2xl font-bold mb-4 text-center text-gray-900 dark:text-gray-100">Asset Table</h1>
-
-      <div className="mb-4 flex justify-between">
-        <button
-          onClick={handleExportToExcel}
-          className={`px-4 py-2 rounded-md ${darkMode ? 'bg-blue-600 text-gray-100 hover:bg-blue-700' : 'bg-blue-500 text-white hover:bg-blue-600'}`}
-        >
-          <FontAwesomeIcon icon={faFileExcel} /> Export to Excel
-        </button>
-        <button
-          onClick={handleEditAll}
-          className={`px-4 py-2 rounded-md ${darkMode ? 'bg-yellow-600 text-gray-100 hover:bg-yellow-700' : 'bg-yellow-500 text-white hover:bg-yellow-600'}`}
-        >
-          <FontAwesomeIcon icon={faEdit} /> {editMode ? 'Cancel Editing' : 'Edit All Fields'}
-        </button>
-      </div>
 
       <div className="overflow-x-auto">
         <table {...getTableProps()} className="min-w-full bg-white dark:bg-gray-800">
@@ -203,18 +154,59 @@ const AssetTable = ({ darkMode }) => {
               return (
                 <tr
                   {...row.getRowProps()}
-                  className={`hover:bg-gray-100 dark:hover:bg-gray-700 ${editMode ? 'bg-gray-200 dark:bg-gray-600' : ''}`}
+                  className={`hover:bg-gray-100 dark:hover:bg-gray-700 ${editAssetId === row.original.id ? 'bg-gray-200 dark:bg-gray-600' : ''}`}
                 >
                   {row.cells.map(cell => (
                     <td
                       {...cell.getCellProps()}
                       className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-gray-100"
                     >
-                      {cell.column.id !== 'actions' && ( // Skip actions column
+                      {editAssetId === row.original.id ? (
+                        <input
+                          type="text"
+                          name={cell.column.id}
+                          value={editValues[cell.column.id] || ''}
+                          onChange={handleChange}
+                          className={`block w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none sm:text-sm ${darkMode ? 'bg-gray-800 border-gray-600 text-gray-300' : 'border-gray-300 bg-white text-gray-900'}`}
+                        />
+                      ) : (
                         cell.render('Cell')
                       )}
                     </td>
                   ))}
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-gray-100">
+                    {editAssetId === row.original.id ? (
+                      <>
+                        <button
+                          onClick={handleSaveClick}
+                          className={`px-3 py-1 rounded-md ${darkMode ? 'bg-green-600 text-gray-100 hover:bg-green-700' : 'bg-green-500 text-white hover:bg-green-600'}`}
+                        >
+                          <FontAwesomeIcon icon={faSave} />
+                        </button>
+                        <button
+                          onClick={handleCancelEdit}
+                          className={`ml-2 px-3 py-1 rounded-md ${darkMode ? 'bg-red-600 text-gray-100 hover:bg-red-700' : 'bg-red-500 text-white hover:bg-red-600'}`}
+                        >
+                          <FontAwesomeIcon icon={faTimes} />
+                        </button>
+                      </>
+                    ) : (
+                      <>
+                        <button
+                          onClick={() => handleEditClick(row.original)}
+                          className={`px-3 py-1 rounded-md ${darkMode ? 'bg-blue-600 text-gray-100 hover:bg-blue-700' : 'bg-blue-500 text-white hover:bg-blue-600'}`}
+                        >
+                          <FontAwesomeIcon icon={faEdit} />
+                        </button>
+                        <button
+                          onClick={() => handleDelete(row.original.id)}
+                          className={`ml-2 px-3 py-1 rounded-md ${darkMode ? 'bg-red-600 text-gray-100 hover:bg-red-700' : 'bg-red-500 text-white hover:bg-red-600'}`}
+                        >
+                          <FontAwesomeIcon icon={faTrashAlt} />
+                        </button>
+                      </>
+                    )}
+                  </td>
                 </tr>
               );
             })}
