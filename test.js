@@ -1,16 +1,22 @@
 import React, { useEffect, useState } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faTrashAlt, faEdit, faSave, faTimes, faFileExcel, faSync } from '@fortawesome/free-solid-svg-icons';
+import { faSave, faTimes, faEdit, faTrashAlt, faFileExcel } from '@fortawesome/free-solid-svg-icons';
+import { useTable, useFilters, useSortBy } from 'react-table';
 import * as XLSX from 'xlsx';
 
-const CentralDatabase = ({ darkMode }) => {
+// Define a custom filter function
+const filterByText = (rows, id, filterValue) => {
+  return rows.filter(row => {
+    const cellValue = row.values[id];
+    return cellValue ? cellValue.toLowerCase().includes(filterValue.toLowerCase()) : false;
+  });
+};
+
+const AssetTable = ({ darkMode }) => {
   const [assets, setAssets] = useState([]);
   const [editAssetId, setEditAssetId] = useState(null);
-  const [editAssetNumber, setEditAssetNumber] = useState('');
-  const [editLoginId, setEditLoginId] = useState('');
-  const [editBusinessGroup, setEditBusinessGroup] = useState('');
-  const [loadingUserInfo, setLoadingUserInfo] = useState('');
-  const [loadingAllUsers, setLoadingAllUsers] = useState(false);
+  const [editValues, setEditValues] = useState({});
+  const [filterInput, setFilterInput] = useState('');
 
   useEffect(() => {
     fetchAssets();
@@ -29,7 +35,51 @@ const CentralDatabase = ({ darkMode }) => {
     }
   };
 
-  const handleDeleteAsset = async (assetId) => {
+  const handleEditClick = (asset) => {
+    setEditAssetId(asset.id);
+    setEditValues({
+      asset_number: asset.asset_number,
+      login_id: asset.login_id,
+      business_group: asset.business_group,
+      employee_id: asset.employee_id
+    });
+  };
+
+  const handleSaveClick = async () => {
+    try {
+      const response = await fetch(`http://localhost:5000/api/assets/${editAssetId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(editValues),
+      });
+      if (!response.ok) {
+        throw new Error('Failed to save asset');
+      }
+      const updatedAsset = await response.json();
+      setAssets(assets.map((asset) => (asset.id === editAssetId ? updatedAsset : asset)));
+      setEditAssetId(null);
+      setEditValues({});
+    } catch (error) {
+      console.error('Failed to save asset:', error);
+    }
+  };
+
+  const handleCancelEdit = () => {
+    setEditAssetId(null);
+    setEditValues({});
+  };
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setEditValues({
+      ...editValues,
+      [name]: value
+    });
+  };
+
+  const handleDelete = async (assetId) => {
     try {
       const response = await fetch(`http://localhost:5000/api/assets/${assetId}`, {
         method: 'DELETE',
@@ -43,252 +93,158 @@ const CentralDatabase = ({ darkMode }) => {
     }
   };
 
-  const handleEditAsset = (assetId, assetNumber, loginId, businessGroup) => {
-    setEditAssetId(assetId);
-    setEditAssetNumber(assetNumber);
-    setEditLoginId(loginId);
-    setEditBusinessGroup(businessGroup);
-  };
-
-  const handleSaveEdit = async (assetId) => {
-    try {
-      const response = await fetch(`http://localhost:5000/api/assets/${assetId}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          asset_number: editAssetNumber,
-          login_id: editLoginId,
-          business_group: editBusinessGroup
-        }),
-      });
-      if (!response.ok) {
-        throw new Error('Failed to save asset');
-      }
-      const updatedAsset = await response.json();
-      setAssets(assets.map((asset) => (asset.id === assetId ? updatedAsset : asset)));
-      setEditAssetId(null);
-      setEditAssetNumber('');
-      setEditLoginId('');
-      setEditBusinessGroup('');
-    } catch (error) {
-      console.error('Failed to edit asset:', error);
-    }
-  };
-
-  const handleCancelEdit = () => {
-    setEditAssetId(null);
-    setEditAssetNumber('');
-    setEditLoginId('');
-    setEditBusinessGroup('');
-  };
-
-  const calculateStats = () => {
-    const stats = {
-      total_assets: assets.length,
-      imaging_complete: 0,
-      ynx1c_complete: 0,
-      business_bundles_complete: 0,
-      rsa_complete: 0,
-    };
-
-    assets.forEach(asset => {
-      if (asset.imaging_complete) stats.imaging_complete++;
-      if (asset.ynx1c_complete) stats.ynx1c_complete++;
-      if (asset.business_bundles_complete) stats.business_bundles_complete++;
-      if (asset.rsa_complete) stats.rsa_complete++;
-    });
-
-    return stats;
-  };
-
   const handleExportToExcel = () => {
     const ws = XLSX.utils.json_to_sheet(assets);
     const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Assets");
-    XLSX.writeFile(wb, "assets.xlsx");
+    XLSX.utils.book_append_sheet(wb, ws, 'Assets');
+    XLSX.writeFile(wb, 'assets.xlsx');
   };
 
-  const handleFetchUserInfo = async (employeeId) => {
-    setLoadingUserInfo(employeeId);
-    try {
-      const response = await fetch('http://localhost:5000/api/run-powershell', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ 
-          script: `Get-ADUser -Filter {EmployeeID -eq '${employeeId}'} -Properties * | Select GivenName,Surname,SamAccountName,EmployeeID,HomeDirectory,SID`
-        }),
-      });
+  const columns = React.useMemo(
+    () => [
+      {
+        Header: 'Employee ID',
+        accessor: 'employee_id',
+      },
+      {
+        Header: 'Business Group',
+        accessor: 'business_group',
+        Filter: ({ column }) => (
+          <input
+            value={filterInput}
+            onChange={(e) => {
+              setFilterInput(e.target.value);
+              column.setFilter(e.target.value);
+            }}
+            placeholder={`Search ${column.Header}`}
+            className={`block w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none sm:text-sm ${darkMode ? 'bg-gray-800 border-gray-600 text-gray-300' : 'border-gray-300 bg-white text-gray-900'}`}
+          />
+        ),
+        filter: filterByText
+      },
+      {
+        Header: 'Asset Number',
+        accessor: 'asset_number',
+      },
+      {
+        Header: 'Login ID',
+        accessor: 'login_id',
+      },
+    ],
+    [filterInput, darkMode]
+  );
 
-      const data = await response.json();
-
-      if (response.ok) {
-        const samAccountName = data.output.trim(); // Adjust based on actual output structure
-        return samAccountName;
-      } else {
-        console.error('Failed to fetch user info:', data.error);
-        return null;
-      }
-    } catch (error) {
-      console.error('Failed to fetch user info:', error);
-      return null;
-    } finally {
-      setLoadingUserInfo('');
-    }
-  };
-
-  const handleFetchAllUserInfo = async () => {
-    setLoadingAllUsers(true);
-    const updatedAssets = await Promise.all(assets.map(async (asset) => {
-      if (asset.employee_id) {
-        const samAccountName = await handleFetchUserInfo(asset.employee_id);
-        if (samAccountName) {
-          return { ...asset, login_id: samAccountName };
-        }
-      }
-      return asset;
-    }));
-    setAssets(updatedAssets);
-    setLoadingAllUsers(false);
-  };
-
-  const stats = calculateStats();
+  const {
+    getTableProps,
+    getTableBodyProps,
+    headerGroups,
+    rows,
+    prepareRow,
+  } = useTable(
+    {
+      columns,
+      data: assets,
+    },
+    useFilters,
+    useSortBy
+  );
 
   return (
-    <div className={`container mx-auto p-4 max-w-screen-md ${darkMode ? 'dark' : ''}`}>
-      <h1 className="text-2xl font-bold mb-4 text-center text-gray-900 dark:text-gray-100">Central Database</h1>
-
-      {/* Stats Bar */}
-      <div className="mb-4 p-4 border rounded-md bg-gray-100 dark:bg-gray-800 dark:border-gray-600">
-        <h2 className="text-xl font-semibold mb-2 text-gray-900 dark:text-gray-100">Statistics</h2>
-        <div className="grid grid-cols-2 gap-4 text-gray-700 dark:text-gray-300">
-          <div>Total Assets: {stats.total_assets}</div>
-          <div>Imaging Complete: {stats.imaging_complete}</div>
-          <div>YNX1C Complete: {stats.ynx1c_complete}</div>
-          <div>Business Bundles Complete: {stats.business_bundles_complete}</div>
-          <div>RSA Complete: {stats.rsa_complete}</div>
-        </div>
-      </div>
-
-      {/* Export to Excel Button */}
-      <div className="mb-4 text-right">
+    <div className={`container mx-auto p-4 ${darkMode ? 'dark' : ''}`}>
+      <h1 className="text-2xl font-bold mb-4 text-center text-gray-900 dark:text-gray-100">Asset Table</h1>
+      <div className="mb-4 text-center">
         <button
           onClick={handleExportToExcel}
           className={`px-4 py-2 rounded-md ${darkMode ? 'bg-green-600 text-gray-100 hover:bg-green-700' : 'bg-green-500 text-white hover:bg-green-600'}`}
         >
-          <FontAwesomeIcon icon={faFileExcel} className="mr-2" />Export to Excel
-        </button>
-        <button
-          onClick={handleFetchAllUserInfo}
-          className={`ml-4 px-4 py-2 rounded-md ${darkMode ? 'bg-blue-600 text-gray-100 hover:bg-blue-700' : 'bg-blue-500 text-white hover:bg-blue-600'}`}
-          disabled={loadingAllUsers}
-        >
-          <FontAwesomeIcon icon={faSync} className="mr-2" />
-          {loadingAllUsers ? 'Fetching...' : 'Fetch All Users'}
+          <FontAwesomeIcon icon={faFileExcel} /> Export to Excel
         </button>
       </div>
-
-      {/* Asset Table */}
       <div className="overflow-x-auto">
-        <table className={`min-w-full divide-y divide-gray-200 ${darkMode ? 'bg-gray-800 text-gray-100' : 'bg-white text-gray-900'}`}>
-          <thead className={`${darkMode ? 'bg-gray-700' : 'bg-gray-50'}`}>
-            <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Employee ID</th>
-              <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Business Group</th>
-              <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Asset Number</th>
-              <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Login ID</th>
-              <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Actions</th>
-            </tr>
-          </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
-            {assets.map((asset) => (
-              <tr key={asset.id}>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  {editAssetId === asset.id ? (
-                    <input
-                      type="text"
-                      value={asset.employee_id}
-                      onChange={(e) => setEditLoginId(e.target.value)}
-                      className="border border-gray-300 rounded-md p-1"
-                    />
-                  ) : (
-                    asset.employee_id
-                  )}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  {editAssetId === asset.id ? (
-                    <input
-                      type="text"
-                      value={editBusinessGroup}
-                      onChange={(e) => setEditBusinessGroup(e.target.value)}
-                      className="border border-gray-300 rounded-md p-1"
-                    />
-                  ) : (
-                    asset.business_group
-                  )}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  {editAssetId === asset.id ? (
-                    <input
-                      type="text"
-                      value={editAssetNumber}
-                      onChange={(e) => setEditAssetNumber(e.target.value)}
-                      className="border border-gray-300 rounded-md p-1"
-                    />
-                  ) : (
-                    asset.asset_number
-                  )}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  {editAssetId === asset.id ? (
-                    <input
-                      type="text"
-                      value={editLoginId}
-                      onChange={(e) => setEditLoginId(e.target.value)}
-                      className="border border-gray-300 rounded-md p-1"
-                    />
-                  ) : (
-                    asset.login_id
-                  )}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                  {editAssetId === asset.id ? (
-                    <>
-                      <button
-                        onClick={() => handleSaveEdit(asset.id)}
-                        className="text-green-600 hover:text-green-900"
-                      >
-                        <FontAwesomeIcon icon={faSave} />
-                      </button>
-                      <button
-                        onClick={handleCancelEdit}
-                        className="ml-2 text-red-600 hover:text-red-900"
-                      >
-                        <FontAwesomeIcon icon={faTimes} />
-                      </button>
-                    </>
-                  ) : (
-                    <>
-                      <button
-                        onClick={() => handleEditAsset(asset.id, asset.asset_number, asset.login_id, asset.business_group)}
-                        className="text-blue-600 hover:text-blue-900"
-                      >
-                        <FontAwesomeIcon icon={faEdit} />
-                      </button>
-                      <button
-                        onClick={() => handleDeleteAsset(asset.id)}
-                        className="ml-2 text-red-600 hover:text-red-900"
-                      >
-                        <FontAwesomeIcon icon={faTrashAlt} />
-                      </button>
-                    </>
-                  )}
-                </td>
+        <table {...getTableProps()} className="min-w-full bg-white dark:bg-gray-800">
+          <thead>
+            {headerGroups.map(headerGroup => (
+              <tr {...headerGroup.getHeaderGroupProps()}>
+                {headerGroup.headers.map(column => (
+                  <th
+                    {...column.getHeaderProps(column.getSortByToggleProps())}
+                    className="px-6 py-3 border-b border-gray-200 bg-gray-50 dark:bg-gray-700 text-left text-xs font-medium text-gray-500 uppercase tracking-wider dark:text-gray-400"
+                  >
+                    {column.render('Header')}
+                    <span>
+                      {column.isSorted
+                        ? column.isSortedDesc
+                          ? ' 🔽'
+                          : ' 🔼'
+                        : ''}
+                    </span>
+                  </th>
+                ))}
               </tr>
             ))}
+          </thead>
+          <tbody {...getTableBodyProps()} className="bg-white divide-y divide-gray-200 dark:bg-gray-800 dark:divide-gray-700">
+            {rows.map(row => {
+              prepareRow(row);
+              return (
+                <tr
+                  {...row.getRowProps()}
+                  className={`hover:bg-gray-100 dark:hover:bg-gray-700 ${editAssetId === row.original.id ? 'bg-gray-200 dark:bg-gray-600' : ''}`}
+                >
+                  {row.cells.map(cell => (
+                    <td
+                      {...cell.getCellProps()}
+                      className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-gray-100"
+                    >
+                      {editAssetId === row.original.id ? (
+                        <input
+                          type="text"
+                          name={cell.column.id}
+                          value={editValues[cell.column.id] || ''}
+                          onChange={handleChange}
+                          className={`block w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none sm:text-sm ${darkMode ? 'bg-gray-800 border-gray-600 text-gray-300' : 'border-gray-300 bg-white text-gray-900'}`}
+                        />
+                      ) : (
+                        cell.render('Cell')
+                      )}
+                    </td>
+                  ))}
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-gray-100">
+                    {editAssetId === row.original.id ? (
+                      <>
+                        <button
+                          onClick={handleSaveClick}
+                          className={`px-3 py-1 rounded-md ${darkMode ? 'bg-green-600 text-gray-100 hover:bg-green-700' : 'bg-green-500 text-white hover:bg-green-600'}`}
+                        >
+                          <FontAwesomeIcon icon={faSave} />
+                        </button>
+                        <button
+                          onClick={handleCancelEdit}
+                          className={`ml-2 px-3 py-1 rounded-md ${darkMode ? 'bg-red-600 text-gray-100 hover:bg-red-700' : 'bg-red-500 text-white hover:bg-red-600'}`}
+                        >
+                          <FontAwesomeIcon icon={faTimes} />
+                        </button>
+                      </>
+                    ) : (
+                      <>
+                        <button
+                          onClick={() => handleEditClick(row.original)}
+                          className={`px-3 py-1 rounded-md ${darkMode ? 'bg-blue-600 text-gray-100 hover:bg-blue-700' : 'bg-blue-500 text-white hover:bg-blue-600'}`}
+                        >
+                          <FontAwesomeIcon icon={faEdit} />
+                        </button>
+                        <button
+                          onClick={() => handleDelete(row.original.id)}
+                          className={`ml-2 px-3 py-1 rounded-md ${darkMode ? 'bg-red-600 text-gray-100 hover:bg-red-700' : 'bg-red-500 text-white hover:bg-red-600'}`}
+                        >
+                          <FontAwesomeIcon icon={faTrashAlt} />
+                        </button>
+                      </>
+                    )}
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>
@@ -296,4 +252,4 @@ const CentralDatabase = ({ darkMode }) => {
   );
 };
 
-export default CentralDatabase;
+export default AssetTable;
