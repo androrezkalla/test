@@ -4,6 +4,14 @@ import { faSave, faTimes, faEdit, faTrashAlt, faFileExcel } from '@fortawesome/f
 import { useTable, useFilters, useSortBy } from 'react-table';
 import * as XLSX from 'xlsx';
 
+// Define a custom filter function
+const filterByText = (rows, id, filterValue) => {
+  return rows.filter(row => {
+    const cellValue = row.values[id];
+    return cellValue ? cellValue.toLowerCase().includes(filterValue.toLowerCase()) : false;
+  });
+};
+
 const AssetTable = ({ darkMode }) => {
   const [assets, setAssets] = useState([]);
   const [editAssetId, setEditAssetId] = useState(null);
@@ -112,6 +120,7 @@ const AssetTable = ({ darkMode }) => {
             className={`block w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none sm:text-sm ${darkMode ? 'bg-gray-800 border-gray-600 text-gray-300' : 'border-gray-300 bg-white text-gray-900'}`}
           />
         ),
+        filter: filterByText
       },
       {
         Header: 'Asset Number',
@@ -243,4 +252,4 @@ const AssetTable = ({ darkMode }) => {
   );
 };
 
-export default
+export default AssetTable;
