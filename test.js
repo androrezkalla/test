@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faTrashAlt, faEdit, faSave, faTimes, faFileExcel, faUser, faSync } from '@fortawesome/free-solid-svg-icons';
+import { faTrashAlt, faEdit, faSave, faTimes, faFileExcel, faSync } from '@fortawesome/free-solid-svg-icons';
 import * as XLSX from 'xlsx';
 
 const CentralDatabase = ({ darkMode }) => {
@@ -9,7 +9,6 @@ const CentralDatabase = ({ darkMode }) => {
   const [editAssetNumber, setEditAssetNumber] = useState('');
   const [editLoginId, setEditLoginId] = useState('');
   const [editBusinessGroup, setEditBusinessGroup] = useState('');
-  const [userInfo, setUserInfo] = useState({});
   const [loadingUserInfo, setLoadingUserInfo] = useState('');
   const [loadingAllUsers, setLoadingAllUsers] = useState(false);
 
@@ -111,8 +110,8 @@ const CentralDatabase = ({ darkMode }) => {
     XLSX.writeFile(wb, "assets.xlsx");
   };
 
-  const handleFetchUserInfo = async (loginId) => {
-    setLoadingUserInfo(loginId);
+  const handleFetchUserInfo = async (employeeId) => {
+    setLoadingUserInfo(employeeId);
     try {
       const response = await fetch('http://localhost:5000/api/run-powershell', {
         method: 'POST',
@@ -120,72 +119,40 @@ const CentralDatabase = ({ darkMode }) => {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ 
-          script: `Get-ADUser -Filter {SamAccountName -eq '${loginId}'} -Properties * | Select GivenName,Surname,SamAccountName,EmployeeID,HomeDirectory,SID`
+          script: `Get-ADUser -Filter {EmployeeID -eq '${employeeId}'} -Properties * | Select GivenName,Surname,SamAccountName,EmployeeID,HomeDirectory,SID`
         }),
       });
 
       const data = await response.json();
 
       if (response.ok) {
-        const userInfo = formatUserInfo(data.output);
-        setUserInfo((prevUserInfo) => ({
-          ...prevUserInfo,
-          [loginId]: userInfo
-        }));
-        // Update the Business Group field with EmployeeID
-        updateAssetBusinessGroup(loginId, data.output);
+        const samAccountName = data.output.trim(); // Adjust based on actual output structure
+        return samAccountName;
       } else {
         console.error('Failed to fetch user info:', data.error);
+        return null;
       }
     } catch (error) {
       console.error('Failed to fetch user info:', error);
+      return null;
     } finally {
       setLoadingUserInfo('');
     }
   };
 
-  const updateAssetBusinessGroup = async (loginId, userInfoOutput) => {
-    const employeeIDMatch = userInfoOutput.match(/EmployeeID\s*:\s*(\S+)/);
-    const employeeID = employeeIDMatch ? employeeIDMatch[1] : '';
-
-    const assetToUpdate = assets.find(asset => asset.login_id === loginId);
-    if (assetToUpdate && employeeID) {
-      try {
-        const response = await fetch(`http://localhost:5000/api/assets/${assetToUpdate.id}`, {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            ...assetToUpdate,
-            business_group: employeeID
-          }),
-        });
-        if (!response.ok) {
-          throw new Error('Failed to update asset');
-        }
-        const updatedAsset = await response.json();
-        setAssets(assets.map((asset) => (asset.id === assetToUpdate.id ? updatedAsset : asset)));
-      } catch (error) {
-        console.error('Failed to update asset with EmployeeID:', error);
-      }
-    }
-  };
-
   const handleFetchAllUserInfo = async () => {
     setLoadingAllUsers(true);
-    const userInfoPromises = assets.map(asset => handleFetchUserInfo(asset.login_id));
-    await Promise.all(userInfoPromises);
+    const updatedAssets = await Promise.all(assets.map(async (asset) => {
+      if (asset.employee_id) {
+        const samAccountName = await handleFetchUserInfo(asset.employee_id);
+        if (samAccountName) {
+          return { ...asset, login_id: samAccountName };
+        }
+      }
+      return asset;
+    }));
+    setAssets(updatedAssets);
     setLoadingAllUsers(false);
-  };
-
-  const formatUserInfo = (output) => {
-    return output
-      .replace(/\r\n/g, '\n')
-      .split('\n')
-      .map(line => line.trim())
-      .filter(line => line.length > 0)
-      .join('\n');
   };
 
   const stats = calculateStats();
@@ -243,9 +210,9 @@ const CentralDatabase = ({ darkMode }) => {
                   {editAssetId === asset.id ? (
                     <input
                       type="text"
-                      value={editAssetNumber}
-                      onChange={(e) => setEditAssetNumber(e.target.value)}
-                      className="border rounded-md px-2 py-1"
+                      value={asset.employee_id}
+                      onChange={(e) => setEditLoginId(e.target.value)}
+                      className="border border-gray-300 rounded-md p-1"
                     />
                   ) : (
                     asset.employee_id
@@ -257,7 +224,7 @@ const CentralDatabase = ({ darkMode }) => {
                       type="text"
                       value={editBusinessGroup}
                       onChange={(e) => setEditBusinessGroup(e.target.value)}
-                      className="border rounded-md px-2 py-1"
+                      className="border border-gray-300 rounded-md p-1"
                     />
                   ) : (
                     asset.business_group
@@ -269,7 +236,7 @@ const CentralDatabase = ({ darkMode }) => {
                       type="text"
                       value={editAssetNumber}
                       onChange={(e) => setEditAssetNumber(e.target.value)}
-                      className="border rounded-md px-2 py-1"
+                      className="border border-gray-300 rounded-md p-1"
                     />
                   ) : (
                     asset.asset_number
@@ -281,24 +248,24 @@ const CentralDatabase = ({ darkMode }) => {
                       type="text"
                       value={editLoginId}
                       onChange={(e) => setEditLoginId(e.target.value)}
-                      className="border rounded-md px-2 py-1"
+                      className="border border-gray-300 rounded-md p-1"
                     />
                   ) : (
                     asset.login_id
                   )}
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                   {editAssetId === asset.id ? (
                     <>
                       <button
                         onClick={() => handleSaveEdit(asset.id)}
-                        className={`px-2 py-1 text-white rounded-md ${darkMode ? 'bg-blue-600 hover:bg-blue-700' : 'bg-blue-500 hover:bg-blue-600'}`}
+                        className="text-green-600 hover:text-green-900"
                       >
                         <FontAwesomeIcon icon={faSave} />
                       </button>
                       <button
                         onClick={handleCancelEdit}
-                        className={`ml-2 px-2 py-1 text-white rounded-md ${darkMode ? 'bg-red-600 hover:bg-red-700' : 'bg-red-500 hover:bg-red-600'}`}
+                        className="ml-2 text-red-600 hover:text-red-900"
                       >
                         <FontAwesomeIcon icon={faTimes} />
                       </button>
@@ -307,21 +274,15 @@ const CentralDatabase = ({ darkMode }) => {
                     <>
                       <button
                         onClick={() => handleEditAsset(asset.id, asset.asset_number, asset.login_id, asset.business_group)}
-                        className={`px-2 py-1 text-white rounded-md ${darkMode ? 'bg-yellow-600 hover:bg-yellow-700' : 'bg-yellow-500 hover:bg-yellow-600'}`}
+                        className="text-blue-600 hover:text-blue-900"
                       >
                         <FontAwesomeIcon icon={faEdit} />
                       </button>
                       <button
                         onClick={() => handleDeleteAsset(asset.id)}
-                        className={`ml-2 px-2 py-1 text-white rounded-md ${darkMode ? 'bg-red-600 hover:bg-red-700' : 'bg-red-500 hover:bg-red-600'}`}
+                        className="ml-2 text-red-600 hover:text-red-900"
                       >
                         <FontAwesomeIcon icon={faTrashAlt} />
-                      </button>
-                      <button
-                        onClick={() => handleFetchUserInfo(asset.login_id)}
-                        className={`ml-2 px-2 py-1 text-white rounded-md ${darkMode ? 'bg-blue-600 hover:bg-blue-700' : 'bg-blue-500 hover:bg-blue-600'}`}
-                      >
-                        <FontAwesomeIcon icon={faUser} />
                       </button>
                     </>
                   )}
