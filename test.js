@@ -118,9 +118,29 @@ const AssetTable = ({ darkMode }) => {
           />
         )
       },
+      {
+        Header: 'Actions',
+        accessor: 'actions',
+        Cell: () => (
+          <button
+            onClick={handleExportToExcel}
+            className={`px-4 py-2 rounded-md ${darkMode ? 'bg-green-600 text-gray-100 hover:bg-green-700' : 'bg-green-500 text-white hover:bg-green-600'}`}
+          >
+            Export to Excel
+          </button>
+        ),
+        id: 'actions'
+      },
     ],
     [editValues, editableRowId, darkMode]
   );
+
+  const handleExportToExcel = () => {
+    const ws = XLSX.utils.json_to_sheet(assets);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Assets");
+    XLSX.writeFile(wb, "assets.xlsx");
+  };
 
   const {
     getTableProps,
@@ -137,23 +157,8 @@ const AssetTable = ({ darkMode }) => {
     useSortBy
   );
 
-  const handleExportToExcel = () => {
-    const ws = XLSX.utils.json_to_sheet(assets);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Assets");
-    XLSX.writeFile(wb, "assets.xlsx");
-  };
-
   return (
     <div className={`container mx-auto p-4 ${darkMode ? 'dark' : ''}`}>
-      <div className="flex justify-end mb-4">
-        <button
-          onClick={handleExportToExcel}
-          className={`px-4 py-2 rounded-md ${darkMode ? 'bg-green-600 text-gray-100 hover:bg-green-700' : 'bg-green-500 text-white hover:bg-green-600'}`}
-        >
-          Export to Excel
-        </button>
-      </div>
       <div className="overflow-x-auto">
         <table {...getTableProps()} className="min-w-full bg-white dark:bg-gray-800">
           <thead>
