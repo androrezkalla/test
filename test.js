@@ -127,10 +127,13 @@ const CentralDatabase = ({ darkMode }) => {
       const data = await response.json();
 
       if (response.ok) {
+        const userInfo = formatUserInfo(data.output);
         setUserInfo((prevUserInfo) => ({
           ...prevUserInfo,
-          [loginId]: formatUserInfo(data.output)
+          [loginId]: userInfo
         }));
+        // Update the Business Group field with EmployeeID
+        updateAssetBusinessGroup(loginId, data.output);
       } else {
         console.error('Failed to fetch user info:', data.error);
       }
@@ -138,6 +141,34 @@ const CentralDatabase = ({ darkMode }) => {
       console.error('Failed to fetch user info:', error);
     } finally {
       setLoadingUserInfo('');
+    }
+  };
+
+  const updateAssetBusinessGroup = async (loginId, userInfoOutput) => {
+    const employeeIDMatch = userInfoOutput.match(/EmployeeID\s*:\s*(\S+)/);
+    const employeeID = employeeIDMatch ? employeeIDMatch[1] : '';
+
+    const assetToUpdate = assets.find(asset => asset.login_id === loginId);
+    if (assetToUpdate && employeeID) {
+      try {
+        const response = await fetch(`http://localhost:5000/api/assets/${assetToUpdate.id}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            ...assetToUpdate,
+            business_group: employeeID
+          }),
+        });
+        if (!response.ok) {
+          throw new Error('Failed to update asset');
+        }
+        const updatedAsset = await response.json();
+        setAssets(assets.map((asset) => (asset.id === assetToUpdate.id ? updatedAsset : asset)));
+      } catch (error) {
+        console.error('Failed to update asset with EmployeeID:', error);
+      }
     }
   };
 
@@ -189,73 +220,85 @@ const CentralDatabase = ({ darkMode }) => {
           disabled={loadingAllUsers}
         >
           <FontAwesomeIcon icon={faSync} className="mr-2" />
-          {loadingAllUsers ? 'Fetching...' : 'Fetch All User Info'}
+          {loadingAllUsers ? 'Fetching...' : 'Fetch All Users'}
         </button>
       </div>
 
-      {assets.length === 0 ? (
-        <p className={`text-center ${darkMode ? 'text-gray-600' : 'text-gray-300'}`}>No assets available.</p>
-      ) : (
-        <div className="grid grid-cols-1 gap-4">
-          {assets.map((asset) => (
-            <div key={asset.id} className={`p-4 border rounded-md ${darkMode ? 'bg-gray-800 border-gray-600' : 'bg-white border-gray-300'}`}>
-              <div className="flex justify-between items-center">
-                <div>
+      {/* Asset Table */}
+      <div className="overflow-x-auto">
+        <table className={`min-w-full divide-y divide-gray-200 ${darkMode ? 'bg-gray-800 text-gray-100' : 'bg-white text-gray-900'}`}>
+          <thead className={`${darkMode ? 'bg-gray-700' : 'bg-gray-50'}`}>
+            <tr>
+              <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Employee ID</th>
+              <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Business Group</th>
+              <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Asset Number</th>
+              <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Login ID</th>
+              <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Actions</th>
+            </tr>
+          </thead>
+          <tbody className="bg-white divide-y divide-gray-200">
+            {assets.map((asset) => (
+              <tr key={asset.id}>
+                <td className="px-6 py-4 whitespace-nowrap">
                   {editAssetId === asset.id ? (
-                    <>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                        Asset Number
-                        <input
-                          type="text"
-                          value={editAssetNumber}
-                          onChange={(e) => setEditAssetNumber(e.target.value)}
-                          className={`block w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none sm:text-sm ${darkMode ? 'bg-gray-800 border-gray-600 text-gray-300' : 'border-gray-300 bg-white text-gray-900'}`}
-                        />
-                      </label>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mt-2">
-                        Login ID
-                        <input
-                          type="text"
-                          value={editLoginId}
-                          onChange={(e) => setEditLoginId(e.target.value)}
-                          className={`block w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none sm:text-sm ${darkMode ? 'bg-gray-800 border-gray-600 text-gray-300' : 'border-gray-300 bg-white text-gray-900'}`}
-                        />
-                      </label>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mt-2">
-                        Business Group
-                        <input
-                          type="text"
-                          value={editBusinessGroup}
-                          onChange={(e) => setEditBusinessGroup(e.target.value)}
-                          className={`block w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none sm:text-sm ${darkMode ? 'bg-gray-800 border-gray-600 text-gray-300' : 'border-gray-300 bg-white text-gray-900'}`}
-                        />
-                      </label>
-                    </>
+                    <input
+                      type="text"
+                      value={editAssetNumber}
+                      onChange={(e) => setEditAssetNumber(e.target.value)}
+                      className="border rounded-md px-2 py-1"
+                    />
                   ) : (
-                    <>
-                      <div>Asset Number: {asset.asset_number}</div>
-                      <div>Login ID: {asset.login_id}</div>
-                      <div>Business Group: {asset.business_group}</div>
-                      {userInfo[asset.login_id] && (
-                        <pre className="mt-2 bg-gray-100 p-2 rounded-lg shadow-sm dark:bg-gray-800 dark:text-gray-300 whitespace-pre-wrap">
-                          {userInfo[asset.login_id]}
-                        </pre>
-                      )}
-                    </>
+                    asset.employee_id
                   )}
-                </div>
-                <div className="flex items-center space-x-2">
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap">
+                  {editAssetId === asset.id ? (
+                    <input
+                      type="text"
+                      value={editBusinessGroup}
+                      onChange={(e) => setEditBusinessGroup(e.target.value)}
+                      className="border rounded-md px-2 py-1"
+                    />
+                  ) : (
+                    asset.business_group
+                  )}
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap">
+                  {editAssetId === asset.id ? (
+                    <input
+                      type="text"
+                      value={editAssetNumber}
+                      onChange={(e) => setEditAssetNumber(e.target.value)}
+                      className="border rounded-md px-2 py-1"
+                    />
+                  ) : (
+                    asset.asset_number
+                  )}
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap">
+                  {editAssetId === asset.id ? (
+                    <input
+                      type="text"
+                      value={editLoginId}
+                      onChange={(e) => setEditLoginId(e.target.value)}
+                      className="border rounded-md px-2 py-1"
+                    />
+                  ) : (
+                    asset.login_id
+                  )}
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                   {editAssetId === asset.id ? (
                     <>
                       <button
                         onClick={() => handleSaveEdit(asset.id)}
-                        className={`p-2 rounded-md ${darkMode ? 'bg-green-600 text-gray-100 hover:bg-green-700' : 'bg-green-500 text-white hover:bg-green-600'}`}
+                        className={`px-2 py-1 text-white rounded-md ${darkMode ? 'bg-blue-600 hover:bg-blue-700' : 'bg-blue-500 hover:bg-blue-600'}`}
                       >
                         <FontAwesomeIcon icon={faSave} />
                       </button>
                       <button
                         onClick={handleCancelEdit}
-                        className={`p-2 rounded-md ${darkMode ? 'bg-red-600 text-gray-100 hover:bg-red-700' : 'bg-red-500 text-white hover:bg-red-600'}`}
+                        className={`ml-2 px-2 py-1 text-white rounded-md ${darkMode ? 'bg-red-600 hover:bg-red-700' : 'bg-red-500 hover:bg-red-600'}`}
                       >
                         <FontAwesomeIcon icon={faTimes} />
                       </button>
@@ -264,31 +307,30 @@ const CentralDatabase = ({ darkMode }) => {
                     <>
                       <button
                         onClick={() => handleEditAsset(asset.id, asset.asset_number, asset.login_id, asset.business_group)}
-                        className={`p-2 rounded-md ${darkMode ? 'bg-blue-600 text-gray-100 hover:bg-blue-700' : 'bg-blue-500 text-white hover:bg-blue-600'}`}
+                        className={`px-2 py-1 text-white rounded-md ${darkMode ? 'bg-yellow-600 hover:bg-yellow-700' : 'bg-yellow-500 hover:bg-yellow-600'}`}
                       >
                         <FontAwesomeIcon icon={faEdit} />
                       </button>
                       <button
                         onClick={() => handleDeleteAsset(asset.id)}
-                        className={`p-2 rounded-md ${darkMode ? 'bg-red-600 text-gray-100 hover:bg-red-700' : 'bg-red-500 text-white hover:bg-red-600'}`}
+                        className={`ml-2 px-2 py-1 text-white rounded-md ${darkMode ? 'bg-red-600 hover:bg-red-700' : 'bg-red-500 hover:bg-red-600'}`}
                       >
                         <FontAwesomeIcon icon={faTrashAlt} />
                       </button>
                       <button
                         onClick={() => handleFetchUserInfo(asset.login_id)}
-                        className={`p-2 rounded-md ${darkMode ? 'bg-yellow-600 text-gray-100 hover:bg-yellow-700' : 'bg-yellow-500 text-white hover:bg-yellow-600'}`}
+                        className={`ml-2 px-2 py-1 text-white rounded-md ${darkMode ? 'bg-blue-600 hover:bg-blue-700' : 'bg-blue-500 hover:bg-blue-600'}`}
                       >
                         <FontAwesomeIcon icon={faUser} />
-                        {loadingUserInfo === asset.login_id && '...'}
                       </button>
                     </>
                   )}
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 };
