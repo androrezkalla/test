@@ -1,8 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faSave, faTimes, faEdit, faTrashAlt, faFileExcel } from '@fortawesome/free-solid-svg-icons';
+import { faEdit, faTrashAlt } from '@fortawesome/free-solid-svg-icons';
 import { useTable, useFilters, useSortBy } from 'react-table';
-import * as XLSX from 'xlsx';
 
 const AssetTable = ({ darkMode }) => {
   const [assets, setAssets] = useState([]);
@@ -82,13 +81,6 @@ const AssetTable = ({ darkMode }) => {
     } catch (error) {
       console.error('Failed to delete asset:', error);
     }
-  };
-
-  const handleExportToExcel = () => {
-    const ws = XLSX.utils.json_to_sheet(assets);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Assets");
-    XLSX.writeFile(wb, "assets.xlsx");
   };
 
   const columns = React.useMemo(
@@ -222,13 +214,6 @@ const AssetTable = ({ darkMode }) => {
                   ))}
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-gray-100">
                     <div className="flex space-x-2">
-                      <button
-                        onClick={handleExportToExcel}
-                        className={`px-3 py-1 rounded-md ${darkMode ? 'bg-green-600 text-gray-100 hover:bg-green-700' : 'bg-green-500 text-white hover:bg-green-600'}`}
-                      >
-                        <FontAwesomeIcon icon={faFileExcel} />
-                      </button>
-                      {/* Existing action buttons for edit, save, delete */}
                       {editAssetId === row.original.id ? (
                         <>
                           <button
