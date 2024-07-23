@@ -1,23 +1,15 @@
 import React, { useEffect, useState } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faSave, faTimes, faEdit, faTrashAlt, faFileExcel, faImport } from '@fortawesome/free-solid-svg-icons';
-import { useTable, useFilters, useSortBy } from 'react-table';
+import { faTrashAlt, faEdit, faSave, faTimes, faFileExcel, faSync, faUser } from '@fortawesome/free-solid-svg-icons';
 import * as XLSX from 'xlsx';
-
-// Define a custom filter function
-const filterByText = (rows, id, filterValue) => {
-  return rows.filter(row => {
-    const cellValue = row.values[id];
-    return cellValue ? cellValue.toLowerCase().includes(filterValue.toLowerCase()) : false;
-  });
-};
 
 const AssetTable = ({ darkMode }) => {
   const [assets, setAssets] = useState([]);
   const [editAssetId, setEditAssetId] = useState(null);
-  const [editValues, setEditValues] = useState({});
-  const [filterInput, setFilterInput] = useState('');
-  const [employeeID, setEmployeeID] = useState('');
+  const [editAssetNumber, setEditAssetNumber] = useState('');
+  const [editLoginId, setEditLoginId] = useState('');
+  const [editBusinessGroup, setEditBusinessGroup] = useState('');
+  const [loadingAllUsers, setLoadingAllUsers] = useState(false);
 
   useEffect(() => {
     fetchAssets();
@@ -36,51 +28,7 @@ const AssetTable = ({ darkMode }) => {
     }
   };
 
-  const handleEditClick = (asset) => {
-    setEditAssetId(asset.id);
-    setEditValues({
-      asset_number: asset.asset_number,
-      login_id: asset.login_id,
-      business_group: asset.business_group,
-      employee_id: asset.employee_id
-    });
-  };
-
-  const handleSaveClick = async () => {
-    try {
-      const response = await fetch(`http://localhost:5000/api/assets/${editAssetId}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(editValues),
-      });
-      if (!response.ok) {
-        throw new Error('Failed to save asset');
-      }
-      const updatedAsset = await response.json();
-      setAssets(assets.map((asset) => (asset.id === editAssetId ? updatedAsset : asset)));
-      setEditAssetId(null);
-      setEditValues({});
-    } catch (error) {
-      console.error('Failed to save asset:', error);
-    }
-  };
-
-  const handleCancelEdit = () => {
-    setEditAssetId(null);
-    setEditValues({});
-  };
-
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setEditValues({
-      ...editValues,
-      [name]: value
-    });
-  };
-
-  const handleDelete = async (assetId) => {
+  const handleDeleteAsset = async (assetId) => {
     try {
       const response = await fetch(`http://localhost:5000/api/assets/${assetId}`, {
         method: 'DELETE',
@@ -94,206 +42,198 @@ const AssetTable = ({ darkMode }) => {
     }
   };
 
-  const handleExportToExcel = () => {
-    const ws = XLSX.utils.json_to_sheet(assets);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, 'Assets');
-    XLSX.writeFile(wb, 'assets.xlsx');
+  const handleEditAsset = (assetId, assetNumber, loginId, businessGroup) => {
+    setEditAssetId(assetId);
+    setEditAssetNumber(assetNumber);
+    setEditLoginId(loginId);
+    setEditBusinessGroup(businessGroup);
   };
 
-  const handleImportUserDetails = async () => {
-    if (!employeeID) {
-      alert('Please enter an Employee ID');
-      return;
-    }
-    const script = `Get-ADUser -Filter {EmployeeID -eq '${employeeID}'} -Properties * | Select SamAccountName`;
-    
+  const handleSaveEdit = async (assetId) => {
     try {
-      const response = await fetch('http://localhost:5000/api/run-powershell', {
-        method: 'POST',
+      const response = await fetch(`http://localhost:5000/api/assets/${assetId}`, {
+        method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ script }),
+        body: JSON.stringify({
+          asset_number: editAssetNumber,
+          login_id: editLoginId,
+          business_group: editBusinessGroup
+        }),
       });
-      const result = await response.json();
-      if (!response.ok || !result.success) {
-        throw new Error(result.error || 'Failed to import user details');
+      if (!response.ok) {
+        throw new Error('Failed to save asset');
       }
-
-      // Update assets with the retrieved SamAccountName
-      const newLoginId = result.output.trim(); // Assuming output is the SamAccountName
-      setAssets(assets.map(asset =>
-        asset.employee_id === employeeID
-          ? { ...asset, login_id: newLoginId }
-          : asset
-      ));
+      const updatedAsset = await response.json();
+      setAssets(assets.map((asset) => (asset.id === assetId ? updatedAsset : asset)));
+      setEditAssetId(null);
+      setEditAssetNumber('');
+      setEditLoginId('');
+      setEditBusinessGroup('');
     } catch (error) {
-      console.error('Failed to import user details:', error);
+      console.error('Failed to edit asset:', error);
     }
   };
 
-  const columns = React.useMemo(
-    () => [
-      {
-        Header: 'Employee ID',
-        accessor: 'employee_id',
-      },
-      {
-        Header: 'Business Group',
-        accessor: 'business_group',
-        Filter: ({ column }) => (
-          <input
-            value={filterInput}
-            onChange={(e) => {
-              setFilterInput(e.target.value);
-              column.setFilter(e.target.value);
-            }}
-            placeholder={`Search ${column.Header}`}
-            className={`block w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none sm:text-sm ${darkMode ? 'bg-gray-800 border-gray-600 text-gray-300' : 'border-gray-300 bg-white text-gray-900'}`}
-          />
-        ),
-        filter: filterByText
-      },
-      {
-        Header: 'Asset Number',
-        accessor: 'asset_number',
-      },
-      {
-        Header: 'Login ID',
-        accessor: 'login_id',
-      },
-    ],
-    [filterInput, darkMode]
-  );
+  const handleCancelEdit = () => {
+    setEditAssetId(null);
+    setEditAssetNumber('');
+    setEditLoginId('');
+    setEditBusinessGroup('');
+  };
 
-  const {
-    getTableProps,
-    getTableBodyProps,
-    headerGroups,
-    rows,
-    prepareRow,
-  } = useTable(
-    {
-      columns,
-      data: assets,
-    },
-    useFilters,
-    useSortBy
-  );
+  const handleExportToExcel = () => {
+    const ws = XLSX.utils.json_to_sheet(assets);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Assets");
+    XLSX.writeFile(wb, "assets.xlsx");
+  };
+
+  const handleUpdateAllLoginIds = async () => {
+    setLoadingAllUsers(true);
+    try {
+      const updatePromises = assets.map(async (asset) => {
+        const response = await fetch('http://localhost:5000/api/run-powershell', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ 
+            script: `Get-ADUser -Filter {EmployeeID -eq '${asset.employee_id}'} -Properties SamAccountName | Select -ExpandProperty SamAccountName`
+          }),
+        });
+
+        if (response.ok) {
+          const samAccountName = await response.text();
+          await fetch(`http://localhost:5000/api/assets/${asset.id}`, {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ login_id: samAccountName }),
+          });
+        } else {
+          console.error('Failed to fetch SamAccountName for EmployeeID:', asset.employee_id);
+        }
+      });
+
+      await Promise.all(updatePromises);
+      // Refetch assets to update the state with new login_ids
+      fetchAssets();
+    } catch (error) {
+      console.error('Failed to update all login IDs:', error);
+    } finally {
+      setLoadingAllUsers(false);
+    }
+  };
 
   return (
-    <div className={`container mx-auto p-4 ${darkMode ? 'dark' : ''}`}>
+    <div className={`container mx-auto p-4 max-w-screen-md ${darkMode ? 'dark' : ''}`}>
       <h1 className="text-2xl font-bold mb-4 text-center text-gray-900 dark:text-gray-100">Asset Table</h1>
-      <div className="mb-4 text-center">
+
+      {/* Export to Excel Button */}
+      <div className="mb-4 text-right">
         <button
           onClick={handleExportToExcel}
           className={`px-4 py-2 rounded-md ${darkMode ? 'bg-green-600 text-gray-100 hover:bg-green-700' : 'bg-green-500 text-white hover:bg-green-600'}`}
         >
-          <FontAwesomeIcon icon={faFileExcel} /> Export to Excel
+          <FontAwesomeIcon icon={faFileExcel} className="mr-2" />Export to Excel
         </button>
         <button
-          onClick={handleImportUserDetails}
+          onClick={handleUpdateAllLoginIds}
           className={`ml-4 px-4 py-2 rounded-md ${darkMode ? 'bg-blue-600 text-gray-100 hover:bg-blue-700' : 'bg-blue-500 text-white hover:bg-blue-600'}`}
+          disabled={loadingAllUsers}
         >
-          <FontAwesomeIcon icon={faImport} /> Import User Details
+          <FontAwesomeIcon icon={faSync} className="mr-2" />
+          {loadingAllUsers ? 'Updating...' : 'Update All Login IDs'}
         </button>
       </div>
-      <div className="mb-4 text-center">
-        <input
-          type="text"
-          value={employeeID}
-          onChange={(e) => setEmployeeID(e.target.value)}
-          placeholder="Enter Employee ID"
-          className={`block w-full max-w-xs px-3 py-2 border rounded-md shadow-sm focus:outline-none sm:text-sm ${darkMode ? 'bg-gray-800 border-gray-600 text-gray-300' : 'border-gray-300 bg-white text-gray-900'}`}
-        />
-      </div>
-      <div className="overflow-x-auto">
-        <table {...getTableProps()} className="min-w-full bg-white dark:bg-gray-800">
-          <thead>
-            {headerGroups.map(headerGroup => (
-              <tr {...headerGroup.getHeaderGroupProps()}>
-                {headerGroup.headers.map(column => (
-                  <th
-                    {...column.getHeaderProps(column.getSortByToggleProps())}
-                    className="px-6 py-3 border-b border-gray-200 bg-gray-50 dark:bg-gray-700 text-left text-xs font-medium text-gray-500 uppercase tracking-wider dark:text-gray-400"
-                  >
-                    {column.render('Header')}
-                    <span>
-                      {column.isSorted
-                        ? column.isSortedDesc
-                          ? ' 🔽'
-                          : ' 🔼'
-                        : ''}
-                    </span>
-                  </th>
-                ))}
-              </tr>
-            ))}
-          </thead>
-          <tbody {...getTableBodyProps()} className="bg-white divide-y divide-gray-200 dark:bg-gray-800 dark:divide-gray-700">
-            {rows.map(row => {
-              prepareRow(row);
-              return (
-                <tr
-                  {...row.getRowProps()}
-                  className={`hover:bg-gray-100 dark:hover:bg-gray-700 ${editAssetId === row.original.id ? 'bg-gray-200 dark:bg-gray-600' : ''}`}
-                >
-                  {row.cells.map(cell => (
-                    <td
-                      {...cell.getCellProps()}
-                      className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-gray-100"
-                    >
-                      {editAssetId === row.original.id ? (
+
+      {assets.length === 0 ? (
+        <p className={`text-center ${darkMode ? 'text-gray-600' : 'text-gray-300'}`}>No assets available.</p>
+      ) : (
+        <div className="grid grid-cols-1 gap-4">
+          {assets.map((asset) => (
+            <div key={asset.id} className={`p-4 border rounded-md ${darkMode ? 'bg-gray-800 border-gray-600' : 'bg-white border-gray-300'}`}>
+              <div className="flex justify-between items-center">
+                <div>
+                  {editAssetId === asset.id ? (
+                    <>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                        Asset Number
                         <input
                           type="text"
-                          name={cell.column.id}
-                          value={editValues[cell.column.id] || ''}
-                          onChange={handleChange}
+                          value={editAssetNumber}
+                          onChange={(e) => setEditAssetNumber(e.target.value)}
                           className={`block w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none sm:text-sm ${darkMode ? 'bg-gray-800 border-gray-600 text-gray-300' : 'border-gray-300 bg-white text-gray-900'}`}
                         />
-                      ) : (
-                        cell.render('Cell')
-                      )}
-                    </td>
-                  ))}
-                  {editAssetId === row.original.id ? (
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                      </label>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mt-2">
+                        Login ID
+                        <input
+                          type="text"
+                          value={editLoginId}
+                          onChange={(e) => setEditLoginId(e.target.value)}
+                          className={`block w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none sm:text-sm ${darkMode ? 'bg-gray-800 border-gray-600 text-gray-300' : 'border-gray-300 bg-white text-gray-900'}`}
+                        />
+                      </label>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mt-2">
+                        Business Group
+                        <input
+                          type="text"
+                          value={editBusinessGroup}
+                          onChange={(e) => setEditBusinessGroup(e.target.value)}
+                          className={`block w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none sm:text-sm ${darkMode ? 'bg-gray-800 border-gray-600 text-gray-300' : 'border-gray-300 bg-white text-gray-900'}`}
+                        />
+                      </label>
+                    </>
+                  ) : (
+                    <>
+                      <div>Asset Number: {asset.asset_number}</div>
+                      <div>Login ID: {asset.login_id}</div>
+                      <div>Business Group: {asset.business_group}</div>
+                    </>
+                  )}
+                </div>
+                <div className="flex items-center space-x-2">
+                  {editAssetId === asset.id ? (
+                    <>
                       <button
-                        onClick={handleSaveClick}
-                        className={`px-4 py-2 rounded-md ${darkMode ? 'bg-green-600 text-gray-100 hover:bg-green-700' : 'bg-green-500 text-white hover:bg-green-600'}`}
+                        onClick={() => handleSaveEdit(asset.id)}
+                        className={`p-2 rounded-md ${darkMode ? 'bg-green-600 text-gray-100 hover:bg-green-700' : 'bg-green-500 text-white hover:bg-green-600'}`}
                       >
                         <FontAwesomeIcon icon={faSave} />
                       </button>
                       <button
                         onClick={handleCancelEdit}
-                        className={`ml-2 px-4 py-2 rounded-md ${darkMode ? 'bg-red-600 text-gray-100 hover:bg-red-700' : 'bg-red-500 text-white hover:bg-red-600'}`}
+                        className={`p-2 rounded-md ${darkMode ? 'bg-red-600 text-gray-100 hover:bg-red-700' : 'bg-red-500 text-white hover:bg-red-600'}`}
                       >
                         <FontAwesomeIcon icon={faTimes} />
                       </button>
-                    </td>
+                    </>
                   ) : (
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                    <>
                       <button
-                        onClick={() => handleEditClick(row.original)}
-                        className={`px-4 py-2 rounded-md ${darkMode ? 'bg-blue-600 text-gray-100 hover:bg-blue-700' : 'bg-blue-500 text-white hover:bg-blue-600'}`}
+                        onClick={() => handleEditAsset(asset.id, asset.asset_number, asset.login_id, asset.business_group)}
+                        className={`p-2 rounded-md ${darkMode ? 'bg-blue-600 text-gray-100 hover:bg-blue-700' : 'bg-blue-500 text-white hover:bg-blue-600'}`}
                       >
                         <FontAwesomeIcon icon={faEdit} />
                       </button>
                       <button
-                        onClick={() => handleDelete(row.original.id)}
-                        className={`ml-2 px-4 py-2 rounded-md ${darkMode ? 'bg-red-600 text-gray-100 hover:bg-red-700' : 'bg-red-500 text-white hover:bg-red-600'}`}
+                        onClick={() => handleDeleteAsset(asset.id)}
+                        className={`p-2 rounded-md ${darkMode ? 'bg-red-600 text-gray-100 hover:bg-red-700' : 'bg-red-500 text-white hover:bg-red-600'}`}
                       >
                         <FontAwesomeIcon icon={faTrashAlt} />
                       </button>
-                    </td>
+                    </>
                   )}
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      </div>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 };
