@@ -88,18 +88,70 @@ const AssetTable = ({ darkMode }) => {
       {
         Header: 'Asset Number',
         accessor: 'asset_number',
+        Cell: ({ row }) => (
+          editAssetId === row.original.id ? (
+            <input
+              type="text"
+              name="asset_number"
+              value={editValues.asset_number || ''}
+              onChange={handleChange}
+              className={`block w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none sm:text-sm ${darkMode ? 'bg-gray-800 border-gray-600 text-gray-300' : 'border-gray-300 bg-white text-gray-900'}`}
+            />
+          ) : (
+            row.original.asset_number
+          )
+        )
       },
       {
         Header: 'Login ID',
         accessor: 'login_id',
+        Cell: ({ row }) => (
+          editAssetId === row.original.id ? (
+            <input
+              type="text"
+              name="login_id"
+              value={editValues.login_id || ''}
+              onChange={handleChange}
+              className={`block w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none sm:text-sm ${darkMode ? 'bg-gray-800 border-gray-600 text-gray-300' : 'border-gray-300 bg-white text-gray-900'}`}
+            />
+          ) : (
+            row.original.login_id
+          )
+        )
       },
       {
         Header: 'Business Group',
         accessor: 'business_group',
+        Cell: ({ row }) => (
+          editAssetId === row.original.id ? (
+            <input
+              type="text"
+              name="business_group"
+              value={editValues.business_group || ''}
+              onChange={handleChange}
+              className={`block w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none sm:text-sm ${darkMode ? 'bg-gray-800 border-gray-600 text-gray-300' : 'border-gray-300 bg-white text-gray-900'}`}
+            />
+          ) : (
+            row.original.business_group
+          )
+        )
       },
       {
         Header: 'Employee ID',
         accessor: 'employee_id',
+        Cell: ({ row }) => (
+          editAssetId === row.original.id ? (
+            <input
+              type="text"
+              name="employee_id"
+              value={editValues.employee_id || ''}
+              onChange={handleChange}
+              className={`block w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none sm:text-sm ${darkMode ? 'bg-gray-800 border-gray-600 text-gray-300' : 'border-gray-300 bg-white text-gray-900'}`}
+            />
+          ) : (
+            row.original.employee_id
+          )
+        )
       },
       {
         Header: 'Actions',
@@ -121,8 +173,7 @@ const AssetTable = ({ darkMode }) => {
                   <FontAwesomeIcon icon={faTimes} />
                 </button>
               </>
-            ) : null}
-            {editAssetId !== row.original.id && (
+            ) : (
               <>
                 <button
                   onClick={() => handleEditClick(row.original)}
@@ -142,7 +193,7 @@ const AssetTable = ({ darkMode }) => {
         )
       },
     ],
-    [editAssetId, darkMode]
+    [editAssetId, darkMode, editValues, assets]
   );
 
   const {
@@ -200,54 +251,13 @@ const AssetTable = ({ darkMode }) => {
                       {...cell.getCellProps()}
                       className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-gray-100"
                     >
-                      {editAssetId === row.original.id ? (
-                        <input
-                          type="text"
-                          name={cell.column.id}
-                          value={editValues[cell.column.id] || ''}
-                          onChange={handleChange}
-                          className={`block w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none sm:text-sm ${darkMode ? 'bg-gray-800 border-gray-600 text-gray-300' : 'border-gray-300 bg-white text-gray-900'}`}
-                        />
-                      ) : (
+                      {cell.column.id !== 'actions' && ( // Skip the actions column here
                         cell.render('Cell')
                       )}
                     </td>
                   ))}
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-gray-100">
-                    <div className="flex space-x-2">
-                      {editAssetId === row.original.id ? (
-                        <>
-                          <button
-                            onClick={handleSaveClick}
-                            className={`px-3 py-1 rounded-md ${darkMode ? 'bg-green-600 text-gray-100 hover:bg-green-700' : 'bg-green-500 text-white hover:bg-green-600'}`}
-                          >
-                            <FontAwesomeIcon icon={faSave} />
-                          </button>
-                          <button
-                            onClick={handleCancelEdit}
-                            className={`px-3 py-1 rounded-md ${darkMode ? 'bg-red-600 text-gray-100 hover:bg-red-700' : 'bg-red-500 text-white hover:bg-red-600'}`}
-                          >
-                            <FontAwesomeIcon icon={faTimes} />
-                          </button>
-                        </>
-                      ) : null}
-                      {editAssetId !== row.original.id && (
-                        <>
-                          <button
-                            onClick={() => handleEditClick(row.original)}
-                            className={`px-3 py-1 rounded-md ${darkMode ? 'bg-blue-600 text-gray-100 hover:bg-blue-700' : 'bg-blue-500 text-white hover:bg-blue-600'}`}
-                          >
-                            <FontAwesomeIcon icon={faEdit} />
-                          </button>
-                          <button
-                            onClick={() => handleDelete(row.original.id)}
-                            className={`px-3 py-1 rounded-md ${darkMode ? 'bg-red-600 text-gray-100 hover:bg-red-700' : 'bg-red-500 text-white hover:bg-red-600'}`}
-                          >
-                            <FontAwesomeIcon icon={faTrashAlt} />
-                          </button>
-                        </>
-                      )}
-                    </div>
+                    {row.cells.find(cell => cell.column.id === 'actions')?.render('Cell')}
                   </td>
                 </tr>
               );
