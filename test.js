@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faTrashAlt, faEdit, faSave, faTimes, faFileExcel, faUser, faSync } from '@fortawesome/free-solid-svg-icons';
+import { faTrashAlt, faEdit, faSave, faTimes, faFileExcel, faSync } from '@fortawesome/free-solid-svg-icons';
 import * as XLSX from 'xlsx';
 
 const CentralDatabase = ({ darkMode }) => {
@@ -9,7 +9,6 @@ const CentralDatabase = ({ darkMode }) => {
   const [editAssetNumber, setEditAssetNumber] = useState('');
   const [editLoginId, setEditLoginId] = useState('');
   const [editBusinessGroup, setEditBusinessGroup] = useState('');
-  const [userInfo, setUserInfo] = useState({});
   const [loadingUserInfo, setLoadingUserInfo] = useState('');
   const [loadingAllUsers, setLoadingAllUsers] = useState(false);
   const [loadingAllUsersByEmpID, setLoadingAllUsersByEmpID] = useState(false);
@@ -112,51 +111,23 @@ const CentralDatabase = ({ darkMode }) => {
     XLSX.writeFile(wb, "assets.xlsx");
   };
 
-  const handleFetchUserInfo = async (loginId) => {
-    setLoadingUserInfo(loginId);
+  const handleFetchAllUsersByEmployeeID = async () => {
+    setLoadingAllUsersByEmpID(true);
     try {
-      const response = await fetch('http://localhost:5000/api/run-powershell', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ 
-          script: `Get-ADUser -Filter {SamAccountName -eq '${loginId}'} -Properties * | Select GivenName,Surname,SamAccountName,EmployeeID,HomeDirectory,SID`
-        }),
-      });
-
-      const data = await response.json();
-
-      if (response.ok) {
-        setUserInfo((prevUserInfo) => ({
-          ...prevUserInfo,
-          [loginId]: formatUserInfo(data.output)
-        }));
-      } else {
-        console.error('Failed to fetch user info:', data.error);
+      for (const asset of assets) {
+        const samAccountName = await fetchSamAccountNameByEmployeeID(asset.employee_id);
+        if (samAccountName) {
+          await updateLoginId(asset.id, samAccountName);
+        }
       }
     } catch (error) {
-      console.error('Failed to fetch user info:', error);
+      console.error('Failed to fetch and update users:', error);
     } finally {
-      setLoadingUserInfo('');
+      setLoadingAllUsersByEmpID(false);
     }
   };
 
-  const handleFetchAllUserInfo = async () => {
-    setLoadingAllUsers(true);
-    const userInfoPromises = assets.map(asset => handleFetchUserInfo(asset.login_id));
-    await Promise.all(userInfoPromises);
-    setLoadingAllUsers(false);
-  };
-
-  const handleFetchAllUsersByEmployeeID = async () => {
-    setLoadingAllUsersByEmpID(true);
-    const employeeIdPromises = assets.map(asset => handleFetchUserInfoByEmployeeID(asset.employee_id));
-    await Promise.all(employeeIdPromises);
-    setLoadingAllUsersByEmpID(false);
-  };
-
-  const handleFetchUserInfoByEmployeeID = async (employeeID) => {
+  const fetchSamAccountNameByEmployeeID = async (employeeID) => {
     setLoadingUserInfo(employeeID);
     try {
       const response = await fetch('http://localhost:5000/api/run-powershell', {
@@ -165,34 +136,50 @@ const CentralDatabase = ({ darkMode }) => {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ 
-          script: `Get-ADUser -Filter {EmployeeID -eq '${employeeID}'} -Properties * | Select GivenName,Surname,SamAccountName,EmployeeID,HomeDirectory,SID`
+          script: `Get-ADUser -Filter {EmployeeID -eq '${employeeID}'} -Properties SamAccountName | Select SamAccountName`
         }),
       });
 
       const data = await response.json();
-
-      if (response.ok) {
-        setUserInfo((prevUserInfo) => ({
-          ...prevUserInfo,
-          [employeeID]: formatUserInfo(data.output)
-        }));
+      if (response.ok && data.output) {
+        const samAccountName = extractSamAccountName(data.output);
+        return samAccountName;
       } else {
-        console.error('Failed to fetch user info by EmployeeID:', data.error);
+        console.error('Failed to fetch SamAccountName:', data.error);
+        return null;
       }
     } catch (error) {
-      console.error('Failed to fetch user info by EmployeeID:', error);
+      console.error('Failed to fetch SamAccountName:', error);
+      return null;
     } finally {
       setLoadingUserInfo('');
     }
   };
 
-  const formatUserInfo = (output) => {
-    return output
-      .replace(/\r\n/g, '\n')
-      .split('\n')
-      .map(line => line.trim())
-      .filter(line => line.length > 0)
-      .join('\n');
+  const extractSamAccountName = (output) => {
+    // Assume the output is in a simple format with SamAccountName on a new line
+    return output.split('\n').find(line => line.includes('SamAccountName')).split(':')[1]?.trim() || '';
+  };
+
+  const updateLoginId = async (assetId, samAccountName) => {
+    try {
+      const response = await fetch(`http://localhost:5000/api/assets/${assetId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          login_id: samAccountName
+        }),
+      });
+      if (!response.ok) {
+        throw new Error('Failed to update Login ID');
+      }
+      // Optionally: update the asset in the state immediately if needed
+      setAssets(assets.map((asset) => (asset.id === assetId ? { ...asset, login_id: samAccountName } : asset)));
+    } catch (error) {
+      console.error('Failed to update Login ID:', error);
+    }
   };
 
   const stats = calculateStats();
@@ -220,12 +207,6 @@ const CentralDatabase = ({ darkMode }) => {
           className={`px-4 py-2 rounded-md ${darkMode ? 'bg-green-600 text-gray-100 hover:bg-green-700' : 'bg-green-500 text-white hover:bg-green-600'}`}
         >
           <FontAwesomeIcon icon={faFileExcel} className="mr-2" />Export to Excel
-        </button>
-        <button
-          onClick={handleFetchAllUserInfo}
-          className={`ml-4 px-4 py-2 rounded-md ${darkMode ? 'bg-blue-600 text-gray-100 hover:bg-blue-700' : 'bg-blue-500 text-white hover:bg-blue-600'}`}
-        >
-          <FontAwesomeIcon icon={faSync} className="mr-2" />Fetch All User Info
         </button>
         <button
           onClick={handleFetchAllUsersByEmployeeID}
