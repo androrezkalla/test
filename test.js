@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faEdit, faTrashAlt } from '@fortawesome/free-solid-svg-icons';
+import { faSave, faTimes, faEdit, faTrashAlt } from '@fortawesome/free-solid-svg-icons';
 import { useTable, useFilters, useSortBy } from 'react-table';
 
 const AssetTable = ({ darkMode }) => {
@@ -121,7 +121,8 @@ const AssetTable = ({ darkMode }) => {
                   <FontAwesomeIcon icon={faTimes} />
                 </button>
               </>
-            ) : (
+            ) : null}
+            {editAssetId !== row.original.id && (
               <>
                 <button
                   onClick={() => handleEditClick(row.original)}
@@ -141,7 +142,7 @@ const AssetTable = ({ darkMode }) => {
         )
       },
     ],
-    [editAssetId, editValues, darkMode]
+    [editAssetId, darkMode]
   );
 
   const {
@@ -229,7 +230,8 @@ const AssetTable = ({ darkMode }) => {
                             <FontAwesomeIcon icon={faTimes} />
                           </button>
                         </>
-                      ) : (
+                      ) : null}
+                      {editAssetId !== row.original.id && (
                         <>
                           <button
                             onClick={() => handleEditClick(row.original)}
