@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faSave, faTimes, faEdit, faTrashAlt, faFileExcel } from '@fortawesome/free-solid-svg-icons';
+import { faSave, faTimes, faEdit, faTrashAlt, faFileExcel, faImport } from '@fortawesome/free-solid-svg-icons';
 import { useTable, useFilters, useSortBy } from 'react-table';
 import * as XLSX from 'xlsx';
 
@@ -17,6 +17,7 @@ const AssetTable = ({ darkMode }) => {
   const [editAssetId, setEditAssetId] = useState(null);
   const [editValues, setEditValues] = useState({});
   const [filterInput, setFilterInput] = useState('');
+  const [employeeID, setEmployeeID] = useState('');
 
   useEffect(() => {
     fetchAssets();
@@ -100,6 +101,38 @@ const AssetTable = ({ darkMode }) => {
     XLSX.writeFile(wb, 'assets.xlsx');
   };
 
+  const handleImportUserDetails = async () => {
+    if (!employeeID) {
+      alert('Please enter an Employee ID');
+      return;
+    }
+    const script = `Get-ADUser -Filter {EmployeeID -eq '${employeeID}'} -Properties * | Select SamAccountName`;
+    
+    try {
+      const response = await fetch('http://localhost:5000/api/run-powershell', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ script }),
+      });
+      const result = await response.json();
+      if (!response.ok || !result.success) {
+        throw new Error(result.error || 'Failed to import user details');
+      }
+
+      // Update assets with the retrieved SamAccountName
+      const newLoginId = result.output.trim(); // Assuming output is the SamAccountName
+      setAssets(assets.map(asset =>
+        asset.employee_id === employeeID
+          ? { ...asset, login_id: newLoginId }
+          : asset
+      ));
+    } catch (error) {
+      console.error('Failed to import user details:', error);
+    }
+  };
+
   const columns = React.useMemo(
     () => [
       {
@@ -159,6 +192,21 @@ const AssetTable = ({ darkMode }) => {
         >
           <FontAwesomeIcon icon={faFileExcel} /> Export to Excel
         </button>
+        <button
+          onClick={handleImportUserDetails}
+          className={`ml-4 px-4 py-2 rounded-md ${darkMode ? 'bg-blue-600 text-gray-100 hover:bg-blue-700' : 'bg-blue-500 text-white hover:bg-blue-600'}`}
+        >
+          <FontAwesomeIcon icon={faImport} /> Import User Details
+        </button>
+      </div>
+      <div className="mb-4 text-center">
+        <input
+          type="text"
+          value={employeeID}
+          onChange={(e) => setEmployeeID(e.target.value)}
+          placeholder="Enter Employee ID"
+          className={`block w-full max-w-xs px-3 py-2 border rounded-md shadow-sm focus:outline-none sm:text-sm ${darkMode ? 'bg-gray-800 border-gray-600 text-gray-300' : 'border-gray-300 bg-white text-gray-900'}`}
+        />
       </div>
       <div className="overflow-x-auto">
         <table {...getTableProps()} className="min-w-full bg-white dark:bg-gray-800">
@@ -209,39 +257,37 @@ const AssetTable = ({ darkMode }) => {
                       )}
                     </td>
                   ))}
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-gray-100">
-                    {editAssetId === row.original.id ? (
-                      <>
-                        <button
-                          onClick={handleSaveClick}
-                          className={`px-3 py-1 rounded-md ${darkMode ? 'bg-green-600 text-gray-100 hover:bg-green-700' : 'bg-green-500 text-white hover:bg-green-600'}`}
-                        >
-                          <FontAwesomeIcon icon={faSave} />
-                        </button>
-                        <button
-                          onClick={handleCancelEdit}
-                          className={`ml-2 px-3 py-1 rounded-md ${darkMode ? 'bg-red-600 text-gray-100 hover:bg-red-700' : 'bg-red-500 text-white hover:bg-red-600'}`}
-                        >
-                          <FontAwesomeIcon icon={faTimes} />
-                        </button>
-                      </>
-                    ) : (
-                      <>
-                        <button
-                          onClick={() => handleEditClick(row.original)}
-                          className={`px-3 py-1 rounded-md ${darkMode ? 'bg-blue-600 text-gray-100 hover:bg-blue-700' : 'bg-blue-500 text-white hover:bg-blue-600'}`}
-                        >
-                          <FontAwesomeIcon icon={faEdit} />
-                        </button>
-                        <button
-                          onClick={() => handleDelete(row.original.id)}
-                          className={`ml-2 px-3 py-1 rounded-md ${darkMode ? 'bg-red-600 text-gray-100 hover:bg-red-700' : 'bg-red-500 text-white hover:bg-red-600'}`}
-                        >
-                          <FontAwesomeIcon icon={faTrashAlt} />
-                        </button>
-                      </>
-                    )}
-                  </td>
+                  {editAssetId === row.original.id ? (
+                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                      <button
+                        onClick={handleSaveClick}
+                        className={`px-4 py-2 rounded-md ${darkMode ? 'bg-green-600 text-gray-100 hover:bg-green-700' : 'bg-green-500 text-white hover:bg-green-600'}`}
+                      >
+                        <FontAwesomeIcon icon={faSave} />
+                      </button>
+                      <button
+                        onClick={handleCancelEdit}
+                        className={`ml-2 px-4 py-2 rounded-md ${darkMode ? 'bg-red-600 text-gray-100 hover:bg-red-700' : 'bg-red-500 text-white hover:bg-red-600'}`}
+                      >
+                        <FontAwesomeIcon icon={faTimes} />
+                      </button>
+                    </td>
+                  ) : (
+                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                      <button
+                        onClick={() => handleEditClick(row.original)}
+                        className={`px-4 py-2 rounded-md ${darkMode ? 'bg-blue-600 text-gray-100 hover:bg-blue-700' : 'bg-blue-500 text-white hover:bg-blue-600'}`}
+                      >
+                        <FontAwesomeIcon icon={faEdit} />
+                      </button>
+                      <button
+                        onClick={() => handleDelete(row.original.id)}
+                        className={`ml-2 px-4 py-2 rounded-md ${darkMode ? 'bg-red-600 text-gray-100 hover:bg-red-700' : 'bg-red-500 text-white hover:bg-red-600'}`}
+                      >
+                        <FontAwesomeIcon icon={faTrashAlt} />
+                      </button>
+                    </td>
+                  )}
                 </tr>
               );
             })}
