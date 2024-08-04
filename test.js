@@ -1,112 +1,67 @@
-import React, { useState, useEffect } from 'react';
-import axios from 'axios';
-import { Pie } from 'react-chartjs-2';
-import { Chart, ArcElement, Tooltip, Legend } from 'chart.js';
+app.get('/api/statistics', async (req, res) => {
+  try {
+    // Total Assets
+    const totalAssetsResult = await pool.query('SELECT COUNT(*) FROM assets');
+    const totalAssets = parseInt(totalAssetsResult.rows[0].count, 10);
 
-Chart.register(ArcElement, Tooltip, Legend);
+    // Defective Devices
+    const defectiveDevicesResult = await pool.query('SELECT COUNT(*) FROM defective_devices');
+    const defectiveDevices = parseInt(defectiveDevicesResult.rows[0].count, 10);
 
-const StatisticsPage = ({ darkMode }) => {
-  const [statistics, setStatistics] = useState({
-    totalAssets: 0,
-    defectiveDevices: 0,
-    assetsReady: 0,
-    assetsNotReady: 0,
-    imagingComplete: 0,
-    ynx1cComplete: 0,
-    bundlesComplete: 0,
-    rsaComplete: 0,
-    assetsByTechnician: [],
-  });
+    // Assets Ready and Not Ready
+    const assetsReadyResult = await pool.query(`
+      SELECT COUNT(*) FROM assets
+      WHERE imaging_complete = TRUE
+        AND ynx1c_complete = TRUE
+        AND business_bundles_complete = TRUE
+        AND rsa_complete = TRUE
+    `);
+    const assetsReady = parseInt(assetsReadyResult.rows[0].count, 10);
 
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+    const assetsNotReadyResult = await pool.query(`
+      SELECT COUNT(*) FROM assets
+      WHERE NOT (
+        imaging_complete = TRUE
+        AND ynx1c_complete = TRUE
+        AND business_bundles_complete = TRUE
+        AND rsa_complete = TRUE
+      )
+    `);
+    const assetsNotReady = parseInt(assetsNotReadyResult.rows[0].count, 10);
 
-  useEffect(() => {
-    const fetchStatistics = async () => {
-      try {
-        const response = await axios.get('http://localhost:5000/api/statistics');
-        setStatistics(response.data);
-        setLoading(false);
-      } catch (error) {
-        setError(error.message);
-        setLoading(false);
-      }
-    };
+    // Imaging, YNX1C, Bundles, RSA Counts
+    const imagingCompleteResult = await pool.query('SELECT COUNT(*) FROM assets WHERE imaging_complete = TRUE');
+    const imagingComplete = parseInt(imagingCompleteResult.rows[0].count, 10);
 
-    fetchStatistics();
-  }, []);
+    const ynx1cCompleteResult = await pool.query('SELECT COUNT(*) FROM assets WHERE ynx1c_complete = TRUE');
+    const ynx1cComplete = parseInt(ynx1cCompleteResult.rows[0].count, 10);
 
-  if (loading) return <div>Loading...</div>;
-  if (error) return <div>Error: {error}</div>;
+    const bundlesCompleteResult = await pool.query('SELECT COUNT(*) FROM assets WHERE business_bundles_complete = TRUE');
+    const bundlesComplete = parseInt(bundlesCompleteResult.rows[0].count, 10);
 
-  const {
-    total_assets,
-    defective_devices,
-    assets_ready,
-    assets_not_ready,
-    imaging_complete,
-    ynx1c_complete,
-    bundles_complete,
-    rsa_complete,
-    assets_by_technician,
-  } = statistics;
+    const rsaCompleteResult = await pool.query('SELECT COUNT(*) FROM assets WHERE rsa_complete = TRUE');
+    const rsaComplete = parseInt(rsaCompleteResult.rows[0].count, 10);
 
-  return (
-    <div className={`container mx-auto p-4 max-w-screen-md ${darkMode ? 'dark' : ''}`}>
-      <h1 className="text-2xl font-bold mb-4 text-center text-gray-900 dark:text-gray-100">Statistics</h1>
+    // Assets by Technician
+    const assetsByTechnicianResult = await pool.query('SELECT technician, COUNT(*) FROM assets GROUP BY technician');
+    const assetsByTechnician = assetsByTechnicianResult.rows.map(row => ({
+      technician: row.technician,
+      count: parseInt(row.count, 10),
+    }));
 
-      {/* Stats Bar */}
-      <div className="mb-4 p-4 border rounded-md bg-gray-100 dark:bg-gray-800 dark:border-gray-600">
-        <h2 className="text-xl font-semibold mb-2 text-gray-900 dark:text-gray-100">Overview</h2>
-        <div className="grid grid-cols-2 gap-4 text-gray-700 dark:text-gray-300">
-          <div>Total Assets: {total_assets}</div>
-          <div>Defective Devices: {defective_devices}</div>
-          <div>Assets Ready: {assets_ready}</div>
-          <div>Assets Not Ready: {assets_not_ready}</div>
-          <div>Imaging Complete: {imaging_complete}</div>
-          <div>YNX1C Complete: {ynx1c_complete}</div>
-          <div>Bundles Complete: {bundles_complete}</div>
-          <div>RSA Complete: {rsa_complete}</div>
-        </div>
-      </div>
-
-      {/* Assets by Technician */}
-      <div className="mb-4 p-4 border rounded-md bg-gray-100 dark:bg-gray-800 dark:border-gray-600">
-        <h2 className="text-xl font-semibold mb-2 text-gray-900 dark:text-gray-100">Assets by Technician</h2>
-        {assets_by_technician.length === 0 ? (
-          <p className={`text-center ${darkMode ? 'text-gray-600' : 'text-gray-300'}`}>No data available.</p>
-        ) : (
-          <div className="grid grid-cols-1 gap-4">
-            {assets_by_technician.map(({ technician, count }) => (
-              <div key={technician} className={`p-4 border rounded-md ${darkMode ? 'bg-gray-800 border-gray-600' : 'bg-white border-gray-300'}`}>
-                <div className="flex justify-between items-center">
-                  <div>Technician: {technician}</div>
-                  <div>Count: {count}</div>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-
-      {/* Pie Chart Example */}
-      {/* You can uncomment and adjust the following section if you want to display pie charts */}
-      {/* 
-      <div className="mb-4">
-        <h2 className="text-xl font-semibold mb-2 text-gray-900 dark:text-gray-100">Status Distribution</h2>
-        <Pie
-          data={{
-            labels: ['Imaging Complete', 'YNX1C Complete', 'Bundles Complete', 'RSA Complete'],
-            datasets: [{
-              data: [imaging_complete, ynx1c_complete, bundles_complete, rsa_complete],
-              backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0'],
-            }]
-          }}
-        />
-      </div> 
-      */}
-    </div>
-  );
-};
-
-export default StatisticsPage;
+    res.json({
+      total_assets: totalAssets,
+      defective_devices: defectiveDevices,
+      assets_ready: assetsReady,
+      assets_not_ready: assetsNotReady,
+      imaging_complete: imagingComplete,
+      ynx1c_complete: ynx1cComplete,
+      bundles_complete: bundlesComplete,
+      rsa_complete: rsaComplete,
+      assets_by_technician: assetsByTechnician,
+    });
+  } catch (error) {
+    console.error('Error fetching statistics:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
