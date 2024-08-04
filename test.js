@@ -1,67 +1,67 @@
-app.get('/api/statistics', async (req, res) => {
-  try {
-    // Total Assets
-    const totalAssetsResult = await pool.query('SELECT COUNT(*) FROM assets');
-    const totalAssets = parseInt(totalAssetsResult.rows[0].count, 10);
+const stats = calculateStats();
 
-    // Defective Devices
-    const defectiveDevicesResult = await pool.query('SELECT COUNT(*) FROM defective_devices');
-    const defectiveDevices = parseInt(defectiveDevicesResult.rows[0].count, 10);
+  const getBackgroundColor = (asset) => {
+    const completedTasks = ['imaging_complete', 'ynx1c_complete', 'business_bundles_complete', 'rsa_complete'].filter(task => asset[task]).length;
+    if (completedTasks === 2) {
+      return darkMode ? 'bg-orange-600' : 'bg-orange-500';
+    } else if (completedTasks === 4) {
+      return darkMode ? 'bg-green-600' : 'bg-green-500';
+    } else {
+      return darkMode ? 'bg-gray-800' : 'bg-white';
+    }
+  };
 
-    // Assets Ready and Not Ready
-    const assetsReadyResult = await pool.query(`
-      SELECT COUNT(*) FROM assets
-      WHERE imaging_complete = TRUE
-        AND ynx1c_complete = TRUE
-        AND business_bundles_complete = TRUE
-        AND rsa_complete = TRUE
-    `);
-    const assetsReady = parseInt(assetsReadyResult.rows[0].count, 10);
+  return (
+    <div className={`container mx-auto p-4 max-w-screen-md ${darkMode ? 'dark' : ''}`}>
+      <h1 className="text-2xl font-bold mb-4 text-center text-gray-900 dark:text-gray-100">Central Database</h1>
 
-    const assetsNotReadyResult = await pool.query(`
-      SELECT COUNT(*) FROM assets
-      WHERE NOT (
-        imaging_complete = TRUE
-        AND ynx1c_complete = TRUE
-        AND business_bundles_complete = TRUE
-        AND rsa_complete = TRUE
-      )
-    `);
-    const assetsNotReady = parseInt(assetsNotReadyResult.rows[0].count, 10);
+      {/* Stats Bar */}
+      <div className="mb-4 p-4 border rounded-md bg-gray-100 dark:bg-gray-800 dark:border-gray-600">
+        <h2 className="text-xl font-semibold mb-2 text-gray-900 dark:text-gray-100">Statistics</h2>
+        <div className="grid grid-cols-2 gap-4 text-gray-700 dark:text-gray-300">
+          <div>Total Assets: {stats.total_assets}</div>
+          <div>Imaging Complete: {stats.imaging_complete}</div>
+          <div>YNX1C Complete: {stats.ynx1c_complete}</div>
+          <div>Business Bundles Complete: {stats.business_bundles_complete}</div>
+          <div>RSA Complete: {stats.rsa_complete}</div>
+        </div>
+      </div>
 
-    // Imaging, YNX1C, Bundles, RSA Counts
-    const imagingCompleteResult = await pool.query('SELECT COUNT(*) FROM assets WHERE imaging_complete = TRUE');
-    const imagingComplete = parseInt(imagingCompleteResult.rows[0].count, 10);
+      {/* Export to Excel Button */}
+      <div className="mb-4 text-right">
+        <button
+          onClick={handleExportToExcel}
+          className={`px-4 py-2 rounded-md ${darkMode ? 'bg-green-600 text-gray-100 hover:bg-green-700' : 'bg-green-500 text-white hover:bg-green-600'}`}
+        >
+          <FontAwesomeIcon icon={faFileExcel} className="mr-2" />Export to Excel
+        </button>
+        <button
+          onClick={handleFetchAllUserInfo}
+          className={`ml-4 px-4 py-2 rounded-md ${darkMode ? 'bg-blue-600 text-gray-100 hover:bg-blue-700' : 'bg-blue-500 text-white hover:bg-blue-600'}`}
+          disabled={loadingAllUsers}
+        >
+          <FontAwesomeIcon icon={faSync} className="mr-2" />
+          {loadingAllUsers ? 'Fetching...' : 'Fetch All User Info'}
+        </button>
+      </div>
 
-    const ynx1cCompleteResult = await pool.query('SELECT COUNT(*) FROM assets WHERE ynx1c_complete = TRUE');
-    const ynx1cComplete = parseInt(ynx1cCompleteResult.rows[0].count, 10);
-
-    const bundlesCompleteResult = await pool.query('SELECT COUNT(*) FROM assets WHERE business_bundles_complete = TRUE');
-    const bundlesComplete = parseInt(bundlesCompleteResult.rows[0].count, 10);
-
-    const rsaCompleteResult = await pool.query('SELECT COUNT(*) FROM assets WHERE rsa_complete = TRUE');
-    const rsaComplete = parseInt(rsaCompleteResult.rows[0].count, 10);
-
-    // Assets by Technician
-    const assetsByTechnicianResult = await pool.query('SELECT technician, COUNT(*) FROM assets GROUP BY technician');
-    const assetsByTechnician = assetsByTechnicianResult.rows.map(row => ({
-      technician: row.technician,
-      count: parseInt(row.count, 10),
-    }));
-
-    res.json({
-      total_assets: totalAssets,
-      defective_devices: defectiveDevices,
-      assets_ready: assetsReady,
-      assets_not_ready: assetsNotReady,
-      imaging_complete: imagingComplete,
-      ynx1c_complete: ynx1cComplete,
-      bundles_complete: bundlesComplete,
-      rsa_complete: rsaComplete,
-      assets_by_technician: assetsByTechnician,
-    });
-  } catch (error) {
-    console.error('Error fetching statistics:', error);
-    res.status(500).json({ success: false, error: error.message });
-  }
-});
+      {assets.length === 0 ? (
+        <p className={`text-center ${darkMode ? 'text-gray-600' : 'text-gray-300'}`}>No assets available.</p>
+      ) : (
+        <div className="grid grid-cols-1 gap-4">
+          {assets.map((asset) => (
+            <div
+              key={asset.id}
+              className={`p-4 border rounded-md ${getBackgroundColor(asset)} ${darkMode ? 'border-gray-600' : 'border-gray-300'}`}
+            >
+              <div className="flex justify-between items-center">
+                <div>
+                  {editAssetId === asset.id ? (
+                    <>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Asset Number</label>
+                      <input
+                        type="text"
+                        value={editAssetNumber}
+                        onChange={(e) => setEditAssetNumber(e.target.value)}
+                        className={`w-full p-2 mt-1 mb-2 border rounded-md ${darkMode ? 'bg-gray-700 border-gray-600 text-gray-100' : 'bg-gray-100 border-gray-300 text-gray-900'}`}
+                      />
