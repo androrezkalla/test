@@ -23,7 +23,16 @@ const QrCodeGenerator = ({ darkMode }) => {
 
   const generateQrValue = (asset) => {
     const { asset_number, login_id, first_name, last_name } = asset;
-    return `Asset Number: ${asset_number}, Login ID: ${login_id}, First Name: ${first_name}, Last Name: ${last_name}`;
+
+    // Create an array to hold the non-null values
+    const qrData = [];
+    if (asset_number) qrData.push(`Asset Number: ${asset_number}`);
+    if (login_id) qrData.push(`Login ID: ${login_id}`);
+    if (first_name) qrData.push(`First Name: ${first_name}`);
+    if (last_name) qrData.push(`Last Name: ${last_name}`);
+
+    // Join the values into a single string
+    return qrData.join(', ');
   };
 
   return (
@@ -33,10 +42,10 @@ const QrCodeGenerator = ({ darkMode }) => {
           key={asset.asset_number}
           className="bg-gray-100 dark:bg-gray-800 p-4 rounded-lg shadow mb-4"
         >
-          <p><strong>Asset Number:</strong> {asset.asset_number}</p>
-          <p><strong>Login ID:</strong> {asset.login_id}</p>
-          <p><strong>First Name:</strong> {asset.first_name}</p>
-          <p><strong>Last Name:</strong> {asset.last_name}</p>
+          <p><strong>Asset Number:</strong> {asset.asset_number || 'N/A'}</p>
+          <p><strong>Login ID:</strong> {asset.login_id || 'N/A'}</p>
+          <p><strong>First Name:</strong> {asset.first_name || 'N/A'}</p>
+          <p><strong>Last Name:</strong> {asset.last_name || 'N/A'}</p>
           <QRCode
             value={generateQrValue(asset)}
             size={128}
