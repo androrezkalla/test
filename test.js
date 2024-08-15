@@ -1,44 +1,6 @@
-const express = require('express');
-const BrotherSDK = require('brother-ptouch-sdk'); // Import the SDK
-const app = express();
-const port = 5000;
-
-app.use(express.json());
-
-// Replace with your printer's name
-const printerName = 'Brother PT-P900W';
-
-app.post('/api/print', async (req, res) => {
-    const { firstName, lastName, qrData } = req.body;
-
-    try {
-        const printer = new BrotherSDK.Printer(printerName);
-
-        // Generate the label content
-        const labelContent = `
-            First Name: ${firstName}\n
-            Last Name: ${lastName}\n
-            QR Code: ${qrData}
-        `;
-
-        // Print the label
-        await printer.printLabel(labelContent);
-
-        res.status(200).send('Label printed successfully');
-    } catch (error) {
-        console.error('Error printing label:', error);
-        res.status(500).send('Failed to print label');
-    }
-});
-
-app.listen(port, () => {
-    console.log(`Server running on port ${port}`);
-});
-
-
-
 import React, { useEffect, useState } from 'react';
 import QRCode from 'qrcode.react';
+import { BrotherLabelPrinter } from 'node-ptouch';
 
 const QrCodeGenerator = ({ darkMode }) => {
   const [assets, setAssets] = useState([]);
@@ -63,42 +25,27 @@ const QrCodeGenerator = ({ darkMode }) => {
   const generateQrValue = (asset) => {
     const { asset_number, login_id, first_name, last_name } = asset;
 
-    // Create an array to hold the non-null values
     const qrData = [];
     if (asset_number) qrData.push(`Asset Number: ${asset_number}`);
     if (login_id) qrData.push(`Login ID: ${login_id}`);
     if (first_name) qrData.push(`First Name: ${first_name}`);
     if (last_name) qrData.push(`Last Name: ${last_name}`);
 
-    // Join the values into a single string
     return qrData.join(', ');
   };
 
   const printLabel = async (asset) => {
-    const qrData = generateQrValue(asset);
+    const printer = new BrotherLabelPrinter('your-printer-ip');
+    
+    const qrValue = generateQrValue(asset);
 
-    try {
-      const response = await fetch('http://localhost:5000/api/print', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          firstName: asset.first_name,
-          lastName: asset.last_name,
-          qrData,
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to print label');
-      }
-
-      alert('Label printed successfully');
-    } catch (error) {
-      console.error('Error printing label:', error);
-      alert('Failed to print label');
-    }
+    await printer.print({
+      text: `${asset.first_name} ${asset.last_name}`,
+      qrCode: qrValue,
+      options: {
+        qrSize: 128,
+      },
+    });
   };
 
   return (
@@ -106,23 +53,24 @@ const QrCodeGenerator = ({ darkMode }) => {
       {assets.map((asset) => (
         <div
           key={asset.asset_number}
-          className="bg-gray-100 dark:bg-gray-800 p-4 rounded-lg shadow mb-4"
+          className="bg-gray-100 dark:bg-gray-800 p-4 rounded-lg shadow mb-4 flex justify-between"
         >
-          <p><strong>Asset Number:</strong> {asset.asset_number || 'N/A'}</p>
-          <p><strong>Login ID:</strong> {asset.login_id || 'N/A'}</p>
-          <p><strong>First Name:</strong> {asset.first_name || 'N/A'}</p>
-          <p><strong>Last Name:</strong> {asset.last_name || 'N/A'}</p>
-          <QRCode
-            value={generateQrValue(asset)}
-            size={128}
-            bgColor={darkMode ? '#333' : '#fff'}
-            fgColor={darkMode ? '#fff' : '#000'}
-            includeMargin={true}
-          />
-          <button
-            className="mt-4 p-2 bg-blue-500 text-white rounded"
-            onClick={() => printLabel(asset)}
-          >
+          <div>
+            <p><strong>Asset Number:</strong> {asset.asset_number || 'N/A'}</p>
+            <p><strong>Login ID:</strong> {asset.login_id || 'N/A'}</p>
+            <p><strong>First Name:</strong> {asset.first_name || 'N/A'}</p>
+            <p><strong>Last Name:</strong> {asset.last_name || 'N/A'}</p>
+          </div>
+          <div className="flex items-center">
+            <QRCode
+              value={generateQrValue(asset)}
+              size={128}
+              bgColor={darkMode ? '#333' : '#fff'}
+              fgColor={darkMode ? '#fff' : '#000'}
+              includeMargin={true}
+            />
+          </div>
+          <button onClick={() => printLabel(asset)} className="ml-4 px-4 py-2 bg-blue-600 text-white rounded">
             Print Label
           </button>
         </div>
