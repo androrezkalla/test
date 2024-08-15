@@ -1,6 +1,41 @@
+const express = require('express');
+const { BrotherLabelPrinter } = require('node-ptouch');
+const app = express();
+const PORT = 5000;
+
+app.use(express.json());
+
+app.post('/api/print-label', async (req, res) => {
+  try {
+    const { firstName, lastName, qrValue } = req.body;
+    const printer = new BrotherLabelPrinter('your-printer-ip');
+    
+    await printer.print({
+      text: `${firstName} ${lastName}`,
+      qrCode: qrValue,
+      options: {
+        qrSize: 128,
+      },
+    });
+    
+    res.status(200).send('Label printed successfully');
+  } catch (error) {
+    console.error('Error printing label:', error);
+    res.status(500).send('Failed to print label');
+  }
+});
+
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
+});
+
+
+
+
+
+
 import React, { useEffect, useState } from 'react';
 import QRCode from 'qrcode.react';
-import { BrotherLabelPrinter } from 'node-ptouch';
 
 const QrCodeGenerator = ({ darkMode }) => {
   const [assets, setAssets] = useState([]);
@@ -35,17 +70,29 @@ const QrCodeGenerator = ({ darkMode }) => {
   };
 
   const printLabel = async (asset) => {
-    const printer = new BrotherLabelPrinter('your-printer-ip');
-    
-    const qrValue = generateQrValue(asset);
+    try {
+      const qrValue = generateQrValue(asset);
+      const response = await fetch('http://localhost:5000/api/print-label', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          firstName: asset.first_name,
+          lastName: asset.last_name,
+          qrValue,
+        }),
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to print label');
+      }
 
-    await printer.print({
-      text: `${asset.first_name} ${asset.last_name}`,
-      qrCode: qrValue,
-      options: {
-        qrSize: 128,
-      },
-    });
+      alert('Label printed successfully');
+    } catch (error) {
+      console.error('Error printing label:', error);
+      alert('Failed to print label');
+    }
   };
 
   return (
