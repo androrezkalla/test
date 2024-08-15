@@ -1,5 +1,5 @@
 const express = require('express');
-const { BrotherLabelPrinter } = require('node-ptouch'); // Ensure this library is installed
+const { PTouchPrint } = require('node-ptouch');
 const app = express();
 const PORT = 5000;
 
@@ -7,16 +7,16 @@ app.use(express.json());
 
 app.post('/api/print-test', async (req, res) => {
   try {
-    const printer = new BrotherLabelPrinter('your-printer-ip'); // Replace 'your-printer-ip' with your actual printer's IP address
+    const ptouch = new PTouchPrint();
 
-    // Basic test print with some sample text
-    await printer.print({
-      text: "Test Page\nThis is a test print from Node.js!",
-      options: {
-        fontSize: 20, // Adjust as necessary
-        align: 'center', // Align the text to the center of the label
-      },
-    });
+    // Connect to the printer (replace 'your-printer-ip' with the actual IP)
+    await ptouch.connect('your-printer-ip', 9100); // Port 9100 is usually the default for Brother printers
+
+    // Print a basic label
+    await ptouch.printText('Test Page\nThis is a test print from Node.js!');
+
+    // Close the connection after printing
+    ptouch.close();
 
     res.status(200).send('Test page printed successfully');
   } catch (error) {
@@ -28,8 +28,6 @@ app.post('/api/print-test', async (req, res) => {
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
-
-
 
 
 
