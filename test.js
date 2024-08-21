@@ -1,81 +1,65 @@
-const handleRSACheck = async (loginId) => {
+const express = require('express');
+const { PTouchPrint } = require('node-ptouch');
+const app = express();
+const PORT = 5000;
+
+app.use(express.json());
+
+app.post('/api/print-test', async (req, res) => {
   try {
-      // Fetch the SID using Get-ADUser
-      const response = await fetch('http://localhost:5000/api/run-powershell', {
-          method: 'POST',
-          headers: {
-              'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-              script: `Get-ADUser -Filter {SamAccountName -eq '${loginId}'} -Properties SID | Select SID`
-          }),
+    const ptouch = new PTouchPrint();
+
+    // Connect to the printer (replace 'your-printer-ip' with the actual IP)
+    await ptouch.connect('your-printer-ip', 9100); // Port 9100 is usually the default for Brother printers
+
+    // Print a basic label
+    await ptouch.printText('Test Page\nThis is a test print from Node.js!');
+
+    // Close the connection after printing
+    ptouch.close();
+
+    res.status(200).send('Test page printed successfully');
+  } catch (error) {
+    console.error('Error printing test page:', error);
+    res.status(500).send('Failed to print test page');
+  }
+});
+
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
+});
+
+
+
+
+import React from 'react';
+
+const TestPrintButton = () => {
+  const printTestPage = async () => {
+    try {
+      const response = await fetch('http://localhost:5000/api/print-test', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
       });
 
-      const data = await response.json();ß
-      const sid = data.output.trim();
-
-      if (response.ok && sid) {
-          // Check the DefaultToken registry value using the SID
-          const rsaResponse = await fetch('http://localhost:5000/api/run-powershell', {
-              method: 'POST',
-              headers: {
-                  'Content-Type': 'application/json',
-              },
-              body: JSON.stringify({
-                  script: `Get-ItemProperty -Path "Registry::HKEY_USERS\\${sid}\\Software\\RSA\\SecurID" -Name DefaultToken | Select-Object DefaultToken`
-              }),
-          });
-
-          const rsaData = await rsaResponse.json();
-          const defaultToken = rsaData.output.trim();
-
-          // If DefaultToken is not null, mark RSA as true
-          if (defaultToken) {
-              setAssets((prevAssets) =>
-                  prevAssets.map((asset) =>
-                      asset.login_id === loginId ? { ...asset, rsa_complete: true } : asset
-                  )
-              );
-          }
-      } else {
-          console.error('Failed to fetch SID or RSA info');
+      if (!response.ok) {
+        throw new Error('Failed to print test page');
       }
-  } catch (error) {
-      console.error('Error:', error);
-  }
+
+      alert('Test page printed successfully');
+    } catch (error) {
+      console.error('Error printing test page:', error);
+      alert('Failed to print test page');
+    }
+  };
+
+  return (
+    <button onClick={printTestPage} className="px-4 py-2 bg-green-600 text-white rounded">
+      Print Test Page
+    </button>
+  );
 };
 
-
-
-const checkBundles = async () => {
-  try {
-      // Fetch the installed applications from the registry
-      const bundlesResponse = await fetch('http://localhost:5000/api/run-powershell', {
-          method: 'POST',
-          headers: {
-              'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-              script: `Get-ItemProperty -Path "Registry::HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\*" | Select-Object DisplayName`
-          }),
-      });
-
-      const bundlesData = await bundlesResponse.json();
-      const installedApps = bundlesData.output.trim().split('\n');
-
-      // Define the list of required applications
-      const requiredApps = ["App1", "App2", "App3"]; // Replace with actual application names
-
-      // Check if all required applications are installed
-      const allRequiredAppsInstalled = requiredApps.every(app => installedApps.includes(app));
-
-      // If all required apps are installed, set Bundles value to true
-      if (allRequiredAppsInstalled) {
-          setBundles(true);  
-      } else {
-          setBundles(false);
-      }
-  } catch (error) {
-      console.error('Error checking bundles:', error);
-  }
-};
+export default TestPrintButton;
