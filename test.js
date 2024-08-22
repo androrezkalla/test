@@ -52,15 +52,6 @@ const OnboardingReadiness = ({ darkMode }) => {
     return { total, ready };
   };
 
-  const isDeploymentReady = (asset) => {
-    return (
-      asset.imaging_complete &&
-      asset.ynx1c_complete &&
-      asset.business_bundles_complete &&
-      asset.rsa_complete
-    );
-  };
-
   return (
     <div className={`container mx-auto p-4 max-w-screen-lg ${darkMode ? 'dark' : ''}`}>
       <h1 className="text-2xl font-bold mb-6 text-center text-gray-900 dark:text-gray-100">
@@ -114,113 +105,114 @@ const OnboardingReadiness = ({ darkMode }) => {
                 <table className="min-w-full divide-y divide-gray-300 dark:divide-gray-600">
                   <thead>
                     <tr>
-                      <th
-                        className="px-4 py-2 text-left text-sm font-medium text-gray-700 dark:text-gray-300"
-                        rowSpan="2"
-                      >
+                      <th className="px-4 py-2 text-left text-sm font-medium text-gray-700 dark:text-gray-300">
                         Asset Number
                       </th>
-                      <th
-                        className="px-4 py-2 text-left text-sm font-medium text-gray-700 dark:text-gray-300"
-                        rowSpan="2"
-                      >
+                      <th className="px-4 py-2 text-left text-sm font-medium text-gray-700 dark:text-gray-300">
                         Login ID
                       </th>
                       <th
-                        className="px-4 py-2 text-center text-sm font-medium text-gray-700 dark:text-gray-300"
-                        colSpan="2"
+                        colSpan={2}
+                        className="px-4 py-2 text-center text-sm font-medium text-gray-700 dark:text-gray-300 border-r-2 border-gray-400"
                       >
                         Asset Readiness
                       </th>
                       <th
-                        className="px-4 py-2 text-center text-sm font-medium text-gray-700 dark:text-gray-300"
-                        colSpan="2"
+                        colSpan={2}
+                        className="px-4 py-2 text-center text-sm font-medium text-gray-700 dark:text-gray-300 border-r-2 border-gray-400"
                       >
                         User Readiness
                       </th>
-                      <th
-                        className="px-4 py-2 text-center text-sm font-medium text-gray-700 dark:text-gray-300"
-                        rowSpan="2"
-                      >
+                      <th className="px-4 py-2 text-center text-sm font-medium text-gray-700 dark:text-gray-300">
                         Deployment Ready
                       </th>
                     </tr>
                     <tr>
+                      <th className="px-4 py-2"></th>
+                      <th className="px-4 py-2"></th>
                       <th className="px-4 py-2 text-center text-sm font-medium text-gray-700 dark:text-gray-300">
                         Imaging
                       </th>
-                      <th className="px-4 py-2 text-center text-sm font-medium text-gray-700 dark:text-gray-300">
+                      <th className="px-4 py-2 text-center text-sm font-medium text-gray-700 dark:text-gray-300 border-r-2 border-gray-400">
                         YNX1C
                       </th>
                       <th className="px-4 py-2 text-center text-sm font-medium text-gray-700 dark:text-gray-300">
                         Business Bundles
                       </th>
-                      <th className="px-4 py-2 text-center text-sm font-medium text-gray-700 dark:text-gray-300">
+                      <th className="px-4 py-2 text-center text-sm font-medium text-gray-700 dark:text-gray-300 border-r-2 border-gray-400">
                         RSA
                       </th>
+                      <th className="px-4 py-2"></th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-                    {assets.map((asset) => (
-                      <tr key={asset.id}>
-                        <td className="px-4 py-2 text-sm text-gray-800 dark:text-gray-200">
-                          {asset.asset_number}
-                        </td>
-                        <td className="px-4 py-2 text-sm text-gray-800 dark:text-gray-200">
-                          {asset.login_id}
-                        </td>
-                        <td className="px-4 py-2 text-center">
-                          <FontAwesomeIcon
-                            icon={
-                              asset.imaging_complete ? faCheckCircle : faTimesCircle
-                            }
-                            className={`${
-                              asset.imaging_complete ? 'text-green-500' : 'text-red-500'
-                            } h-5 w-5`}
-                          />
-                        </td>
-                        <td className="px-4 py-2 text-center">
-                          <FontAwesomeIcon
-                            icon={
-                              asset.ynx1c_complete ? faCheckCircle : faTimesCircle
-                            }
-                            className={`${
-                              asset.ynx1c_complete ? 'text-green-500' : 'text-red-500'
-                            } h-5 w-5`}
-                          />
-                        </td>
-                        <td className="px-4 py-2 text-center">
-                          <FontAwesomeIcon
-                            icon={
-                              asset.business_bundles_complete ? faCheckCircle : faTimesCircle
-                            }
-                            className={`${
-                              asset.business_bundles_complete
-                                ? 'text-green-500'
-                                : 'text-red-500'
-                            } h-5 w-5`}
-                          />
-                        </td>
-                        <td className="px-4 py-2 text-center">
-                          <FontAwesomeIcon
-                            icon={
-                              asset.rsa_complete ? faCheckCircle : faTimesCircle
-                            }
-                            className={`${
-                              asset.rsa_complete ? 'text-green-500' : 'text-red-500'
-                            } h-5 w-5`}
-                          />
-                        </td>
-                        <td className="px-4 py-2 text-center">
-                          <FontAwesomeIcon
-                            icon={isDeploymentReady(asset) ? faCheckCircle : faTimesCircle}
-                            className={`${
-                              isDeploymentReady(asset) ? 'text-green-500' : 'text-red-500'
-                            } h-5 w-5`}
-                          />
-                        </td>
-                      </tr>
-                    ))}
+                    {assets.map((asset) => {
+                      const isDeploymentReady =
+                        asset.imaging_complete &&
+                        asset.ynx1c_complete &&
+                        asset.business_bundles_complete &&
+                        asset.rsa_complete;
+                      return (
+                        <tr key={asset.id}>
+                          <td className="px-4 py-2 text-sm text-gray-800 dark:text-gray-200">
+                            {asset.asset_number}
+                          </td>
+                          <td className="px-4 py-2 text-sm text-gray-800 dark:text-gray-200">
+                            {asset.login_id}
+                          </td>
+                          <td className="px-4 py-2 text-center">
+                            <FontAwesomeIcon
+                              icon={
+                                asset.imaging_complete ? faCheckCircle : faTimesCircle
+                              }
+                              className={`${
+                                asset.imaging_complete
+                                  ? 'text-green-500'
+                                  : 'text-red-500'
+                              } h-5 w-5`}
+                            />
+                          </td>
+                          <td className="px-4 py-2 text-center border-r-2 border-gray-400">
+                            <FontAwesomeIcon
+                              icon={asset.ynx1c_complete ? faCheckCircle : faTimesCircle}
+                              className={`${
+                                asset.ynx1c_complete ? 'text-green-500' : 'text-red-500'
+                              } h-5 w-5`}
+                            />
+                          </td>
+                          <td className="px-4 py-2 text-center">
+                            <FontAwesomeIcon
+                              icon={
+                                asset.business_bundles_complete
+                                  ? faCheckCircle
+                                  : faTimesCircle
+                              }
+                              className={`${
+                                asset.business_bundles_complete
+                                  ? 'text-green-500'
+                                  : 'text-red-500'
+                              } h-5 w-5`}
+                            />
+                          </td>
+                          <td className="px-4 py-2 text-center border-r-2 border-gray-400">
+                            <FontAwesomeIcon
+                              icon={asset.rsa_complete ? faCheckCircle : faTimesCircle}
+                              className={`${
+                                asset.rsa_complete ? 'text-green-500' : 'text-red-500'
+                              } h-5 w-5`}
+                            />
+                          </td>
+                          <td className="px-4 py-2 text-center">
+                            <FontAwesomeIcon
+                              icon={isDeploymentReady ? faCheckCircle : faTimesCircle}
+                              className={`${
+                                isDeploymentReady ? 'text-green-500' : 'text-red-500'
+                              } h-5 w-5`}
+                            />
+                          </td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>
