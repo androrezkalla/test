@@ -1,110 +1,208 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faTrashAlt, faEdit, faSave, faTimes, faFileExcel, faUser, faSync, faUpload } from '@fortawesome/free-solid-svg-icons';
+import * as XLSX from 'xlsx';
 import axios from 'axios';
 
-const CentralDatabase = () => {
-    const [selectedFile, setSelectedFile] = useState(null);
+const CentralDatabase = ({ darkMode }) => {
+  const [assets, setAssets] = useState([]);
+  const [editAssetId, setEditAssetId] = useState(null);
+  const [editAssetNumber, setEditAssetNumber] = useState('');
+  const [editLoginId, setEditLoginId] = useState('');
+  const [editBusinessGroup, setEditBusinessGroup] = useState('');
+  const [userInfo, setUserInfo] = useState({});
+  const [loadingUserInfo, setLoadingUserInfo] = useState('');
+  const [loadingAllUsers, setLoadingAllUsers] = useState(false);
+  const [selectedFile, setSelectedFile] = useState(null);
 
-    const handleFileUpload = (event) => {
-        const file = event.target.files[0];
-        setSelectedFile(file);
-        uploadFile(file); 
-    };
+  useEffect(() => {
+    fetchAssets();
+  }, []);
 
-    const handleButtonClick = () => {
-        document.getElementById('fileInput').click();
-    };
-
-    const uploadFile = async (file) => {
-        const formData = new FormData();
-        formData.append('file', file);
-
-        try {
-            const response = await axios.post('/upload', formData, {
-                headers: {
-                    'Content-Type': 'multipart/form-data',
-                },
-            });
-            console.log('File uploaded successfully:', response.data);
-        } catch (error) {
-            console.error('Error uploading file:', error);
-        }
-    };
-
-    return (
-        <div>
-            <button onClick={handleButtonClick}>Upload Excel File</button>
-            <input
-                type="file"
-                id="fileInput"
-                style={{ display: 'none' }}
-                onChange={handleFileUpload}
-            />
-        </div>
-    );
-};
-
-
-
-
-
-
-const express = require('express');
-const multer = require('multer');
-const xlsx = require('xlsx');
-const { Pool } = require('pg');
-const bodyParser = require('body-parser');
-const dotenv = require('dotenv');
-
-// Load environment variables from .env file
-dotenv.config();
-
-const app = express();
-const pool = new Pool({
-    connectionString: process.env.DATABASE_URL,
-});
-
-// Middleware for parsing form data
-app.use(bodyParser.urlencoded({ extended: true }));
-app.use(bodyParser.json());
-
-// Configure Multer for file uploads
-const upload = multer({ dest: 'uploads/' });
-
-app.post('/upload', upload.single('file'), async (req, res) => {
+  const fetchAssets = async () => {
     try {
-        if (!req.file) {
-            return res.status(400).send('No file uploaded.');
-        }
-
-        const workbook = xlsx.readFile(req.file.path);
-        const sheetName = workbook.SheetNames[0];
-        const sheet = workbook.Sheets[sheetName];
-        const jsonData = xlsx.utils.sheet_to_json(sheet, { defval: '' });
-
-        for (let row of jsonData) {
-            const { AssetNumber, LoginID, BusinessGroup, EmployeeID } = row;
-
-            if (AssetNumber && LoginID && BusinessGroup && EmployeeID) {
-                await pool.query(
-                    'INSERT INTO your_table_name (asset_number, login_id, business_group, employee_id) VALUES ($1, $2, $3, $4)',
-                    [AssetNumber, LoginID, BusinessGroup, EmployeeID]
-                );
-            }
-        }
-
-        res.send('File uploaded and data inserted successfully');
+      const response = await fetch('http://localhost:5000/api/assets');
+      if (!response.ok) {
+        throw new Error('Failed to fetch assets');
+      }
+      const data = await response.json();
+      setAssets(data);
     } catch (error) {
-        console.error('Error processing file:', error);
-        res.status(500).send('Server error');
+      console.error('Failed to fetch assets:', error);
     }
-});
+  };
 
-// Add your other routes and server logic here
+  const handleDeleteAsset = async (assetId) => {
+    try {
+      const response = await fetch(`http://localhost:5000/api/assets/${assetId}`, {
+        method: 'DELETE',
+      });
+      if (!response.ok) {
+        throw new Error('Failed to delete asset');
+      }
+      setAssets(assets.filter((asset) => asset.id !== assetId));
+    } catch (error) {
+      console.error('Failed to delete asset:', error);
+    }
+  };
 
-app.listen(process.env.PORT || 3000, () => {
-    console.log('Server is running');
-});
+  const handleEditAsset = (assetId, assetNumber, loginId, businessGroup) => {
+    setEditAssetId(assetId);
+    setEditAssetNumber(assetNumber);
+    setEditLoginId(loginId);
+    setEditBusinessGroup(businessGroup);
+  };
 
+  const handleSaveEdit = async (assetId) => {
+    try {
+      const response = await fetch(`http://localhost:5000/api/assets/${assetId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          asset_number: editAssetNumber,
+          login_id: editLoginId,
+          business_group: editBusinessGroup
+        }),
+      });
+      if (!response.ok) {
+        throw new Error('Failed to save asset');
+      }
+      const updatedAsset = await response.json();
+      setAssets(assets.map((asset) => (asset.id === assetId ? updatedAsset : asset)));
+      setEditAssetId(null);
+      setEditAssetNumber('');
+      setEditLoginId('');
+      setEditBusinessGroup('');
+    } catch (error) {
+      console.error('Failed to edit asset:', error);
+    }
+  };
 
+  const handleCancelEdit = () => {
+    setEditAssetId(null);
+    setEditAssetNumber('');
+    setEditLoginId('');
+    setEditBusinessGroup('');
+  };
 
+  const calculateStats = () => {
+    const stats = {
+      total_assets: assets.length,
+      imaging_complete: 0,
+      ynx1c_complete: 0,
+      business_bundles_complete: 0,
+      rsa_complete: 0,
+    };
 
+    assets.forEach(asset => {
+      if (asset.imaging_complete) stats.imaging_complete++;
+      if (asset.ynx1c_complete) stats.ynx1c_complete++;
+      if (asset.business_bundles_complete) stats.business_bundles_complete++;
+      if (asset.rsa_complete) stats.rsa_complete++;
+    });
+
+    return stats;
+  };
+
+  const handleExportToExcel = () => {
+    const ws = XLSX.utils.json_to_sheet(assets);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Assets");
+    XLSX.writeFile(wb, "assets.xlsx");
+  };
+
+  const handleFetchUserInfo = async (loginId) => {
+    setLoadingUserInfo(loginId);
+    try {
+      const response = await fetch('http://localhost:5000/api/run-powershell', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ 
+          script: `Get-ADUser -Filter {SamAccountName -eq '${loginId}'} -Properties * | Select GivenName,Surname,SamAccountName,EmployeeID,HomeDirectory,SID`
+        }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        setUserInfo((prevUserInfo) => ({
+          ...prevUserInfo,
+          [loginId]: formatUserInfo(data.output)
+        }));
+      } else {
+        console.error('Failed to fetch user info:', data.error);
+      }
+    } catch (error) {
+      console.error('Failed to fetch user info:', error);
+    } finally {
+      setLoadingUserInfo('');
+    }
+  };
+
+  const handleFetchAllUserInfo = async () => {
+    setLoadingAllUsers(true);
+    const userInfoPromises = assets.map(asset => handleFetchUserInfo(asset.login_id));
+    await Promise.all(userInfoPromises);
+    setLoadingAllUsers(false);
+  };
+
+  const formatUserInfo = (output) => {
+    return output
+      .replace(/\r\n/g, '\n')
+      .split('\n')
+      .map(line => line.trim())
+      .filter(line => line.length > 0)
+      .join('\n');
+  };
+
+  const handleFileUpload = async (file) => {
+    const formData = new FormData();
+    formData.append('file', file);
+
+    try {
+      const response = await axios.post('http://localhost:5000/upload', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+      console.log('File uploaded successfully:', response.data);
+      fetchAssets(); // Refresh assets after upload
+    } catch (error) {
+      console.error('Error uploading file:', error);
+    }
+  };
+
+  const handleFileChange = (event) => {
+    const file = event.target.files[0];
+    if (file) {
+      handleFileUpload(file);
+    }
+  };
+
+  const handleButtonClick = () => {
+    document.getElementById('fileInput').click();
+  };
+
+  const stats = calculateStats();
+
+        {/* File Upload Button */}
+        <button
+          onClick={handleButtonClick}
+          className={`ml-4 px-4 py-2 rounded-md ${darkMode ? 'bg-yellow-600 text-gray-100 hover:bg-yellow-700' : 'bg-yellow-500 text-white hover:bg-yellow-600'}`}
+        >
+          <FontAwesomeIcon icon={faUpload} className="mr-2" />Upload Excel File
+        </button>
+        <input
+          id="fileInput"
+          type="file"
+          accept=".xlsx, .xls"
+          onChange={handleFileChange}
+          style={{ display: 'none' }}
+        />
+      </div>
+
+     
