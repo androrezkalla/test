@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faCheckCircle, faTimesCircle } from '@fortawesome/free-solid-svg-icons';
+import { faSync, faCheckCircle, faTimesCircle } from '@fortawesome/free-solid-svg-icons';
 
 const OnboardingReadiness = ({ darkMode }) => {
   const [assets, setAssets] = useState([]);
@@ -67,6 +67,21 @@ const OnboardingReadiness = ({ darkMode }) => {
         Onboarding Readiness
       </h1>
 
+      <div className="mb-4 text-right">
+        <button
+          onClick={fetchAssets}
+          className={`px-4 py-2 rounded-md ${
+            darkMode
+              ? 'bg-blue-600 text-gray-100 hover:bg-blue-700'
+              : 'bg-blue-500 text-white hover:bg-blue-600'
+          }`}
+          disabled={loading}
+        >
+          <FontAwesomeIcon icon={faSync} className="mr-2" />
+          {loading ? 'Refreshing...' : 'Refresh Data'}
+        </button>
+      </div>
+
       {loading ? (
         <div className="text-center text-gray-700 dark:text-gray-300">Loading assets...</div>
       ) : Object.keys(groupedAssets).length === 0 ? (
@@ -99,20 +114,49 @@ const OnboardingReadiness = ({ darkMode }) => {
                 <table className="min-w-full divide-y divide-gray-300 dark:divide-gray-600">
                   <thead>
                     <tr>
-                      <th className="px-4 py-2 text-left text-sm font-medium text-gray-700 dark:text-gray-300">
+                      <th
+                        className="px-4 py-2 text-left text-sm font-medium text-gray-700 dark:text-gray-300"
+                        rowSpan="2"
+                      >
                         Asset Number
                       </th>
-                      <th className="px-4 py-2 text-left text-sm font-medium text-gray-700 dark:text-gray-300">
+                      <th
+                        className="px-4 py-2 text-left text-sm font-medium text-gray-700 dark:text-gray-300"
+                        rowSpan="2"
+                      >
                         Login ID
                       </th>
-                      <th className="px-4 py-2 text-center text-sm font-medium text-gray-700 dark:text-gray-300">
+                      <th
+                        className="px-4 py-2 text-center text-sm font-medium text-gray-700 dark:text-gray-300"
+                        colSpan="2"
+                      >
                         Asset Readiness
                       </th>
-                      <th className="px-4 py-2 text-center text-sm font-medium text-gray-700 dark:text-gray-300">
+                      <th
+                        className="px-4 py-2 text-center text-sm font-medium text-gray-700 dark:text-gray-300"
+                        colSpan="2"
+                      >
                         User Readiness
                       </th>
-                      <th className="px-4 py-2 text-center text-sm font-medium text-gray-700 dark:text-gray-300">
+                      <th
+                        className="px-4 py-2 text-center text-sm font-medium text-gray-700 dark:text-gray-300"
+                        rowSpan="2"
+                      >
                         Deployment Ready
+                      </th>
+                    </tr>
+                    <tr>
+                      <th className="px-4 py-2 text-center text-sm font-medium text-gray-700 dark:text-gray-300">
+                        Imaging
+                      </th>
+                      <th className="px-4 py-2 text-center text-sm font-medium text-gray-700 dark:text-gray-300">
+                        YNX1C
+                      </th>
+                      <th className="px-4 py-2 text-center text-sm font-medium text-gray-700 dark:text-gray-300">
+                        Business Bundles
+                      </th>
+                      <th className="px-4 py-2 text-center text-sm font-medium text-gray-700 dark:text-gray-300">
+                        RSA
                       </th>
                     </tr>
                   </thead>
@@ -126,64 +170,52 @@ const OnboardingReadiness = ({ darkMode }) => {
                           {asset.login_id}
                         </td>
                         <td className="px-4 py-2 text-center">
-                          <div className="flex justify-around">
-                            <FontAwesomeIcon
-                              icon={
-                                asset.imaging_complete ? faCheckCircle : faTimesCircle
-                              }
-                              className={`${
-                                asset.imaging_complete
-                                  ? 'text-green-500'
-                                  : 'text-red-500'
-                              } h-5 w-5`}
-                            />
-                            <FontAwesomeIcon
-                              icon={
-                                asset.ynx1c_complete ? faCheckCircle : faTimesCircle
-                              }
-                              className={`${
-                                asset.ynx1c_complete
-                                  ? 'text-green-500'
-                                  : 'text-red-500'
-                              } h-5 w-5`}
-                            />
-                          </div>
-                        </td>
-                        <td className="px-4 py-2 text-center">
-                          <div className="flex justify-around">
-                            <FontAwesomeIcon
-                              icon={
-                                asset.business_bundles_complete
-                                  ? faCheckCircle
-                                  : faTimesCircle
-                              }
-                              className={`${
-                                asset.business_bundles_complete
-                                  ? 'text-green-500'
-                                  : 'text-red-500'
-                              } h-5 w-5`}
-                            />
-                            <FontAwesomeIcon
-                              icon={
-                                asset.rsa_complete ? faCheckCircle : faTimesCircle
-                              }
-                              className={`${
-                                asset.rsa_complete ? 'text-green-500' : 'text-red-500'
-                              } h-5 w-5`}
-                            />
-                          </div>
+                          <FontAwesomeIcon
+                            icon={
+                              asset.imaging_complete ? faCheckCircle : faTimesCircle
+                            }
+                            className={`${
+                              asset.imaging_complete ? 'text-green-500' : 'text-red-500'
+                            } h-5 w-5`}
+                          />
                         </td>
                         <td className="px-4 py-2 text-center">
                           <FontAwesomeIcon
                             icon={
-                              isDeploymentReady(asset)
-                                ? faCheckCircle
-                                : faTimesCircle
+                              asset.ynx1c_complete ? faCheckCircle : faTimesCircle
                             }
                             className={`${
-                              isDeploymentReady(asset)
+                              asset.ynx1c_complete ? 'text-green-500' : 'text-red-500'
+                            } h-5 w-5`}
+                          />
+                        </td>
+                        <td className="px-4 py-2 text-center">
+                          <FontAwesomeIcon
+                            icon={
+                              asset.business_bundles_complete ? faCheckCircle : faTimesCircle
+                            }
+                            className={`${
+                              asset.business_bundles_complete
                                 ? 'text-green-500'
                                 : 'text-red-500'
+                            } h-5 w-5`}
+                          />
+                        </td>
+                        <td className="px-4 py-2 text-center">
+                          <FontAwesomeIcon
+                            icon={
+                              asset.rsa_complete ? faCheckCircle : faTimesCircle
+                            }
+                            className={`${
+                              asset.rsa_complete ? 'text-green-500' : 'text-red-500'
+                            } h-5 w-5`}
+                          />
+                        </td>
+                        <td className="px-4 py-2 text-center">
+                          <FontAwesomeIcon
+                            icon={isDeploymentReady(asset) ? faCheckCircle : faTimesCircle}
+                            className={`${
+                              isDeploymentReady(asset) ? 'text-green-500' : 'text-red-500'
                             } h-5 w-5`}
                           />
                         </td>
