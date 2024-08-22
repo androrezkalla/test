@@ -1,65 +1,90 @@
-const express = require('express');
-const { PTouchPrint } = require('node-ptouch');
-const app = express();
-const PORT = 5000;
+import React, { useState } from 'react';
+import axios from 'axios';
 
-app.use(express.json());
+const ExcelUpload = () => {
+    const [file, setFile] = useState(null);
 
-app.post('/api/print-test', async (req, res) => {
-  try {
-    const ptouch = new PTouchPrint();
+    const handleFileChange = (e) => {
+        setFile(e.target.files[0]);
+    };
 
-    // Connect to the printer (replace 'your-printer-ip' with the actual IP)
-    await ptouch.connect('your-printer-ip', 9100); // Port 9100 is usually the default for Brother printers
+    const handleUpload = async () => {
+        if (!file) return;
 
-    // Print a basic label
-    await ptouch.printText('Test Page\nThis is a test print from Node.js!');
+        const formData = new FormData();
+        formData.append('file', file);
 
-    // Close the connection after printing
-    ptouch.close();
+        try {
+            const response = await axios.post('/api/upload', formData, {
+                headers: {
+                    'Content-Type': 'multipart/form-data'
+                }
+            });
+            alert('File uploaded successfully!');
+        } catch (error) {
+            console.error('Error uploading file:', error);
+            alert('Failed to upload file.');
+        }
+    };
 
-    res.status(200).send('Test page printed successfully');
-  } catch (error) {
-    console.error('Error printing test page:', error);
-    res.status(500).send('Failed to print test page');
-  }
-});
-
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-});
-
-
-
-
-import React from 'react';
-
-const TestPrintButton = () => {
-  const printTestPage = async () => {
-    try {
-      const response = await fetch('http://localhost:5000/api/print-test', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to print test page');
-      }
-
-      alert('Test page printed successfully');
-    } catch (error) {
-      console.error('Error printing test page:', error);
-      alert('Failed to print test page');
-    }
-  };
-
-  return (
-    <button onClick={printTestPage} className="px-4 py-2 bg-green-600 text-white rounded">
-      Print Test Page
-    </button>
-  );
+    return (
+        <div>
+            <input type="file" accept=".xlsx, .xls" onChange={handleFileChange} />
+            <button onClick={handleUpload}>Upload</button>
+        </div>
+    );
 };
 
-export default TestPrintButton;
+export default ExcelUpload;
+
+
+
+app.post('/api/upload', upload.single('file'), async (req, res) => {
+  const workbook = XLSX.readFile(req.file.path);
+  const sheetName = workbook.SheetNames[0];
+  const worksheet = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName]);
+
+  const columns = {
+      assetNumber: null,
+      loginID: null,
+      employeeID: null,
+      businessGroup: null,
+  };
+
+  // Detect column indexes
+  const headers = Object.keys(worksheet[0]);
+  headers.forEach((header) => {
+      if (/asset/i.test(header)) columns.assetNumber = header;
+      if (/login/i.test(header)) columns.loginID = header;
+      if (/employee/i.test(header)) columns.employeeID = header;
+      if (/business/i.test(header)) columns.businessGroup = header;
+  });
+
+  if (!columns.assetNumber || !columns.loginID || !columns.employeeID || !columns.businessGroup) {
+      return res.status(400).json({ message: 'Required columns not found in the uploaded file.' });
+  }
+
+  try {
+      const client = await pool.connect();
+      await Promise.all(
+          worksheet.map(async (row) => {
+              const query = `
+                  INSERT INTO assets (asset_number, login_id, employee_id, business_group)
+                  VALUES ($1, $2, $3, $4)
+              `;
+              const values = [
+                  row[columns.assetNumber],
+                  row[columns.loginID],
+                  row[columns.employeeID],
+                  row[columns.businessGroup]
+              ];
+              await client.query(query, values);
+          })
+      );
+      client.release();
+      res.json({ message: 'File processed and data inserted successfully.' });
+  } catch (error) {
+      console.error('Error inserting data:', error);
+      res.status(500).json({ message: 'Failed to insert data into the database.' });
+  }
+});
