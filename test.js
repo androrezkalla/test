@@ -1,53 +1,54 @@
-app.post('/upload', upload.single('file'), async (req, res) => {
-  if (!req.file) {
-      return res.status(400).send('No file uploaded.');
+onst [view, setView] = useState('default');
+
+const columns = React.useMemo(() => {
+  if (view === 'default') {
+    return [
+      { Header: 'Employee ID', accessor: 'employee_id' },
+      { Header: 'Business Group', accessor: 'business_group' },
+      { Header: 'Asset Number', accessor: 'asset_number' },
+      { Header: 'Login ID', accessor: 'login_id' },
+    ];
+  } else if (view === 'detailed') {
+    return [
+      { Header: 'Employee ID', accessor: 'employee_id' },
+      { Header: 'Business Group', accessor: 'business_group' },
+      { Header: 'Asset Number', accessor: 'asset_number' },
+      { Header: 'Login ID', accessor: 'login_id' },
+      { Header: 'First Name', accessor: 'first_name' },
+      { Header: 'Last Name', accessor: 'last_name' },
+      { Header: 'Preferred Name', accessor: 'preferred_name' },
+      { Header: 'Personal Email', accessor: 'personal_email' },
+      { Header: 'Phone Number', accessor: 'phone_number' },
+      { Header: 'School', accessor: 'school' },
+      { Header: 'Business Manager', accessor: 'business_manager' },
+      { Header: 'Transit', accessor: 'transit' },
+    ];
   }
+  return [];
+}, [view, filterInput, darkMode]);
 
-  const filePath = path.join(__dirname, 'uploads', req.file.filename);
-  console.log('Uploaded file path:', filePath); // Debug statement
 
-  try {
-      const workbook = xlsx.readFile(filePath);
-      const sheetName = workbook.SheetNames[0];
-      const sheet = workbook.Sheets[sheetName];
-      const jsonData = xlsx.utils.sheet_to_json(sheet, { defval: '' });
-
-      console.log('Parsed JSON data:', jsonData); // Debug statement
-
-      // Start a transaction
-      const client = await pool.connect();
-      try {
-          await client.query('BEGIN');
-
-          for (let row of jsonData) {
-              const { AssetNumber, LoginID, BusinessGroup, EmployeeID } = row;
-
-              console.log('Processing row:', { AssetNumber, LoginID, BusinessGroup, EmployeeID }); // Debug statement
-
-              if (AssetNumber && LoginID && BusinessGroup && EmployeeID) {
-                  await client.query(
-                      'INSERT INTO your_table_name (asset_number, login_id, business_group, employee_id) VALUES ($1, $2, $3, $4)',
-                      [AssetNumber, LoginID, BusinessGroup, EmployeeID]
-                  );
-              }
-          }
-
-          await client.query('COMMIT');
-          res.send('File uploaded and data inserted successfully');
-      } catch (error) {
-          await client.query('ROLLBACK');
-          console.error('Error inserting data into database:', error);
-          res.status(500).send('Error inserting data into database');
-      } finally {
-          client.release();
-      }
-  } catch (error) {
-      console.error('Error processing file:', error);
-      res.status(500).send('Server error');
-  } finally {
-      // Clean up the uploaded file
-      fs.unlink(filePath, (err) => {
-          if (err) console.error('Error removing file:', err);
-      });
-  }
-});
+return (
+  <div className={`container mx-auto p-4 ${darkMode ? 'dark' : ''}`}>
+    <h1 className="text-2xl font-bold mb-4 text-center text-gray-900 dark:text-gray-100">Asset Table</h1>
+    <div className="mb-4 text-center">
+      <button
+        onClick={handleExportToExcel}
+        className={`px-4 py-2 rounded-md ${darkMode ? 'bg-green-600 text-gray-100 hover:bg-green-700' : 'bg-green-500 text-white hover:bg-green-600'}`}
+      >
+        <FontAwesomeIcon icon={faFileExcel} /> Export to Excel
+      </button>
+    </div>
+    <div className="mb-4 text-center">
+      <select
+        value={view}
+        onChange={(e) => setView(e.target.value)}
+        className={`px-4 py-2 rounded-md ${darkMode ? 'bg-gray-800 border-gray-600 text-gray-300' : 'bg-white border-gray-300 text-gray-900'}`}
+      >
+        <option value="default">Default View</option>
+        <option value="detailed">Detailed View</option>
+      </select>
+    </div>
+    <div className="overflow-x-auto">
+      <table {...getTableProps()} className="min-w-full bg-white dark:bg-gray-800">
+        <thead>
