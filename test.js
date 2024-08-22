@@ -1,90 +1,110 @@
 import React, { useState } from 'react';
 import axios from 'axios';
 
-const ExcelUpload = () => {
-    const [file, setFile] = useState(null);
+const CentralDatabase = () => {
+    const [selectedFile, setSelectedFile] = useState(null);
 
-    const handleFileChange = (e) => {
-        setFile(e.target.files[0]);
+    const handleFileUpload = (event) => {
+        const file = event.target.files[0];
+        setSelectedFile(file);
+        uploadFile(file); 
     };
 
-    const handleUpload = async () => {
-        if (!file) return;
+    const handleButtonClick = () => {
+        document.getElementById('fileInput').click();
+    };
 
+    const uploadFile = async (file) => {
         const formData = new FormData();
         formData.append('file', file);
 
         try {
-            const response = await axios.post('/api/upload', formData, {
+            const response = await axios.post('/upload', formData, {
                 headers: {
-                    'Content-Type': 'multipart/form-data'
-                }
+                    'Content-Type': 'multipart/form-data',
+                },
             });
-            alert('File uploaded successfully!');
+            console.log('File uploaded successfully:', response.data);
         } catch (error) {
             console.error('Error uploading file:', error);
-            alert('Failed to upload file.');
         }
     };
 
     return (
         <div>
-            <input type="file" accept=".xlsx, .xls" onChange={handleFileChange} />
-            <button onClick={handleUpload}>Upload</button>
+            <button onClick={handleButtonClick}>Upload Excel File</button>
+            <input
+                type="file"
+                id="fileInput"
+                style={{ display: 'none' }}
+                onChange={handleFileUpload}
+            />
         </div>
     );
 };
 
-export default ExcelUpload;
 
 
 
-app.post('/api/upload', upload.single('file'), async (req, res) => {
-  const workbook = XLSX.readFile(req.file.path);
-  const sheetName = workbook.SheetNames[0];
-  const worksheet = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName]);
 
-  const columns = {
-      assetNumber: null,
-      loginID: null,
-      employeeID: null,
-      businessGroup: null,
-  };
 
-  // Detect column indexes
-  const headers = Object.keys(worksheet[0]);
-  headers.forEach((header) => {
-      if (/asset/i.test(header)) columns.assetNumber = header;
-      if (/login/i.test(header)) columns.loginID = header;
-      if (/employee/i.test(header)) columns.employeeID = header;
-      if (/business/i.test(header)) columns.businessGroup = header;
-  });
+const express = require('express');
+const multer = require('multer');
+const xlsx = require('xlsx');
+const { Pool } = require('pg');
+const bodyParser = require('body-parser');
+const dotenv = require('dotenv');
 
-  if (!columns.assetNumber || !columns.loginID || !columns.employeeID || !columns.businessGroup) {
-      return res.status(400).json({ message: 'Required columns not found in the uploaded file.' });
-  }
+// Load environment variables from .env file
+dotenv.config();
 
-  try {
-      const client = await pool.connect();
-      await Promise.all(
-          worksheet.map(async (row) => {
-              const query = `
-                  INSERT INTO assets (asset_number, login_id, employee_id, business_group)
-                  VALUES ($1, $2, $3, $4)
-              `;
-              const values = [
-                  row[columns.assetNumber],
-                  row[columns.loginID],
-                  row[columns.employeeID],
-                  row[columns.businessGroup]
-              ];
-              await client.query(query, values);
-          })
-      );
-      client.release();
-      res.json({ message: 'File processed and data inserted successfully.' });
-  } catch (error) {
-      console.error('Error inserting data:', error);
-      res.status(500).json({ message: 'Failed to insert data into the database.' });
-  }
+const app = express();
+const pool = new Pool({
+    connectionString: process.env.DATABASE_URL,
 });
+
+// Middleware for parsing form data
+app.use(bodyParser.urlencoded({ extended: true }));
+app.use(bodyParser.json());
+
+// Configure Multer for file uploads
+const upload = multer({ dest: 'uploads/' });
+
+app.post('/upload', upload.single('file'), async (req, res) => {
+    try {
+        if (!req.file) {
+            return res.status(400).send('No file uploaded.');
+        }
+
+        const workbook = xlsx.readFile(req.file.path);
+        const sheetName = workbook.SheetNames[0];
+        const sheet = workbook.Sheets[sheetName];
+        const jsonData = xlsx.utils.sheet_to_json(sheet, { defval: '' });
+
+        for (let row of jsonData) {
+            const { AssetNumber, LoginID, BusinessGroup, EmployeeID } = row;
+
+            if (AssetNumber && LoginID && BusinessGroup && EmployeeID) {
+                await pool.query(
+                    'INSERT INTO your_table_name (asset_number, login_id, business_group, employee_id) VALUES ($1, $2, $3, $4)',
+                    [AssetNumber, LoginID, BusinessGroup, EmployeeID]
+                );
+            }
+        }
+
+        res.send('File uploaded and data inserted successfully');
+    } catch (error) {
+        console.error('Error processing file:', error);
+        res.status(500).send('Server error');
+    }
+});
+
+// Add your other routes and server logic here
+
+app.listen(process.env.PORT || 3000, () => {
+    console.log('Server is running');
+});
+
+
+
+
