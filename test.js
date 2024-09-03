@@ -84,3 +84,38 @@ export const TableProvider = ({ children }) => {
     </TableContext.Provider>
   );
 };
+
+
+import React, { useContext, useEffect, useState } from 'react';
+import { TableContext } from './TableContext';
+
+const DataPage = () => {
+  const { selectedTable } = useContext(TableContext);
+  const [data, setData] = useState([]);
+
+  useEffect(() => {
+    const fetchDataFromTable = async (tableName) => {
+      try {
+        const response = await fetch(`http://localhost:5000/api/data/${tableName}`);
+        if (!response.ok) throw new Error('Failed to fetch data');
+        const data = await response.json();
+        setData(data);
+      } catch (error) {
+        console.error('Failed to fetch data:', error);
+      }
+    };
+
+    if (selectedTable) {
+      fetchDataFromTable(selectedTable);
+    }
+  }, [selectedTable]);
+
+  return (
+    <div>
+      <h1>Data from Table: {selectedTable}</h1>
+      {/* Render the data table here */}
+    </div>
+  );
+};
+
+export default DataPage;
