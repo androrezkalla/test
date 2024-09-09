@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import * as XLSX from 'xlsx';
 import QRCode from 'qrcode.react';
-import emailjs from 'emailjs-com';
 
 const GalaCheckIn = () => {
   const [guestList, setGuestList] = useState([]);
@@ -44,23 +43,12 @@ const GalaCheckIn = () => {
     e.target.value = ''; // Clear the input after processing
   };
 
-  const handleManualCheck = () => {
-    alert(JSON.stringify(guestList, null, 2));
-  };
-
-  const createOutlookDraft = (guest) => {
+  const createEmailDraft = (guest) => {
     const qrCodeData = `${guest.FirstName},${guest.LastName},${guest.Email}`;
     const qrCodeURL = document.getElementById(`qr-code-${guest.Email}`).toDataURL();
 
-    const emailBody = `
-      Dear ${guest.FirstName},<br><br>
-      Please find your QR code attached for the event.<br><br>
-      <img src="${qrCodeURL}" alt="QR Code"><br><br>
-      Best Regards,<br>
-      Event Team
-    `;
+    const mailtoLink = `mailto:${guest.Email}?subject=Your%20Gala%20QR%20Code&body=Hi%20${guest.FirstName},%0A%0APlease%20find%20your%20QR%20code%20attached%20below.%0A%0A<img%20src="${qrCodeURL}"%20alt="QR%20Code"/>`;
 
-    const mailtoLink = `mailto:${guest.Email}?subject=Your Event QR Code&body=${encodeURIComponent(emailBody)}`;
     window.location.href = mailtoLink;
   };
 
@@ -71,12 +59,6 @@ const GalaCheckIn = () => {
           <h2 className="text-2xl font-bold mb-4">Admin Section</h2>
           <div className="mb-4">
             <input type="file" accept=".xlsx" onChange={handleUpload} className="mb-2" />
-            <button
-              onClick={handleManualCheck}
-              className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
-            >
-              Manually Check Guest List
-            </button>
           </div>
           <div className="overflow-x-auto">
             <table className="min-w-full bg-white">
@@ -86,7 +68,7 @@ const GalaCheckIn = () => {
                   <th className="py-2 px-4">Last Name</th>
                   <th className="py-2 px-4">Email</th>
                   <th className="py-2 px-4">QR Code</th>
-                  <th className="py-2 px-4">Create Outlook Draft</th>
+                  <th className="py-2 px-4">Create Email Draft</th>
                 </tr>
               </thead>
               <tbody>
@@ -105,10 +87,10 @@ const GalaCheckIn = () => {
                     </td>
                     <td className="py-2 px-4">
                       <button
-                        onClick={() => createOutlookDraft(guest)}
+                        onClick={() => createEmailDraft(guest)}
                         className="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600"
                       >
-                        Create Draft
+                        Create Email Draft
                       </button>
                     </td>
                   </tr>
@@ -118,15 +100,18 @@ const GalaCheckIn = () => {
           </div>
         </div>
       ) : (
-        <div className={`min-h-screen w-full flex flex-col items-center justify-center ${scannedGuest ? 'bg-green-500' : 'bg-red-500'}`}>
-          <input
-            type="text"
-            placeholder="Scan QR Code Here"
-            onChange={handleScanInput}
-            className="mb-4 px-4 py-2 border rounded"
-            autoFocus
-          />
-          <h1 className="text-white text-4xl font-bold">{message}</h1>
+        <div className={`flex flex-col items-center justify-center w-full h-full ${
+          scannedGuest ? 'bg-green-500' : 'bg-red-500'
+        }`}>
+          <h1 className="text-white text-6xl font-bold mb-10 text-center">{message}</h1>
+          <div className="w-full flex justify-center">
+            <input
+              type="text"
+              onBlur={(e) => e.target.focus()} // Keeps the input focused for continuous scanning
+              onChange={handleScanInput}
+              className="opacity-0 absolute" // Hides the input
+            />
+          </div>
         </div>
       )}
 
