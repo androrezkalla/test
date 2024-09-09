@@ -43,13 +43,12 @@ const GalaCheckIn = () => {
     e.target.value = ''; // Clear the input after processing
   };
 
-  const createEmailDraft = (guest) => {
+  const sendEmail = (guest) => {
     const qrCodeData = `${guest.FirstName},${guest.LastName},${guest.Email}`;
     const qrCodeURL = document.getElementById(`qr-code-${guest.Email}`).toDataURL();
 
-    const mailtoLink = `mailto:${guest.Email}?subject=Your%20Gala%20QR%20Code&body=Hi%20${guest.FirstName},%0A%0APlease%20find%20your%20QR%20code%20attached%20below.%0A%0A<img%20src="${qrCodeURL}"%20alt="QR%20Code"/>`;
-
-    window.location.href = mailtoLink;
+    // Logic to create a draft in Outlook (This part is just a placeholder since direct Outlook draft creation isn't possible via frontend JavaScript)
+    console.log('Draft created for:', guest.Email, qrCodeURL);
   };
 
   return (
@@ -68,7 +67,7 @@ const GalaCheckIn = () => {
                   <th className="py-2 px-4">Last Name</th>
                   <th className="py-2 px-4">Email</th>
                   <th className="py-2 px-4">QR Code</th>
-                  <th className="py-2 px-4">Create Email Draft</th>
+                  <th className="py-2 px-4">Send Email</th>
                 </tr>
               </thead>
               <tbody>
@@ -87,10 +86,10 @@ const GalaCheckIn = () => {
                     </td>
                     <td className="py-2 px-4">
                       <button
-                        onClick={() => createEmailDraft(guest)}
+                        onClick={() => sendEmail(guest)}
                         className="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600"
                       >
-                        Create Email Draft
+                        Create Draft
                       </button>
                     </td>
                   </tr>
@@ -100,17 +99,29 @@ const GalaCheckIn = () => {
           </div>
         </div>
       ) : (
-        <div className={`flex flex-col items-center justify-center w-full h-full ${
-          scannedGuest ? 'bg-green-500' : 'bg-red-500'
-        }`}>
-          <h1 className="text-white text-6xl font-bold mb-10 text-center">{message}</h1>
-          <div className="w-full flex justify-center">
-            <input
-              type="text"
-              onBlur={(e) => e.target.focus()} // Keeps the input focused for continuous scanning
-              onChange={handleScanInput}
-              className="opacity-0 absolute" // Hides the input
-            />
+        <div
+          className={`min-h-screen w-full flex flex-col items-center justify-between ${
+            scannedGuest ? 'bg-green-500' : 'bg-red-500'
+          } p-4`}
+        >
+          <h1 className="text-white text-4xl font-bold flex-grow flex items-center justify-center">
+            {message}
+          </h1>
+          <input
+            type="text"
+            onChange={handleScanInput}
+            autoFocus
+            className="opacity-0"
+            style={{ height: 0, width: 0 }}
+          />
+          <div className="pb-4">
+            {scannedGuest && (
+              <QRCode
+                value={`${scannedGuest.FirstName},${scannedGuest.LastName},${scannedGuest.Email}`}
+                size={128}
+                level={"H"}
+              />
+            )}
           </div>
         </div>
       )}
