@@ -1,121 +1,140 @@
-app.get('/api/tables', async (req, res) => {
-  try {
-    const result = await db.query('SELECT DISTINCT TableName FROM assets ORDER BY TableName');
-    const tableNames = result.map(row => row.TableName);
-    res.json(tableNames);
-  } catch (error) {
-    res.status(500).json({ error: 'Failed to fetch table names' });
-  }
-});
+import React, { useState } from 'react';
+import * as XLSX from 'xlsx';
+import QRCode from 'qrcode.react';
+import emailjs from 'emailjs-com';
 
-app.get('/api/data/:tableName', async (req, res) => {
-  const { tableName } = req.params;
-  try {
-    const data = await db.query('SELECT * FROM assets WHERE TableName = ?', [tableName]);
-    res.json(data);
-  } catch (error) {
-    res.status(500).json({ error: `Failed to fetch data from table ${tableName}` });
-  }
-});
+const GalaCheckIn = () => {
+  const [guestList, setGuestList] = useState([]);
+  const [scannedGuest, setScannedGuest] = useState(null);
+  const [message, setMessage] = useState('');
+  const [adminView, setAdminView] = useState(false);
 
+  const handleUpload = (e) => {
+    const file = e.target.files[0];
+    const reader = new FileReader();
+    reader.onload = (evt) => {
+      const data = evt.target.result;
+      const workbook = XLSX.read(data, { type: 'binary' });
+      const sheetName = workbook.SheetNames[0];
+      const sheet = workbook.Sheets[sheetName];
+      const guests = XLSX.utils.sheet_to_json(sheet);
+      setGuestList(guests);
+    };
+    reader.readAsBinaryString(file);
+  };
 
-
-
-
-
-
-import React, { useState, useEffect, useContext } from 'react';
-import { TableContext } from './TableContext';
-
-const MainPage = () => {
-  const { selectedTable, setSelectedTable } = useContext(TableContext);
-  const [tables, setTables] = useState([]);
-
-  useEffect(() => {
-    const fetchTables = async () => {
-      try {
-        const response = await fetch('http://localhost:5000/api/tables');
-        if (!response.ok) throw new Error('Failed to fetch tables');
-        const data = await response.json();
-        setTables(data);
-      } catch (error) {
-        console.error('Failed to fetch tables:', error);
+  const handleScanInput = (e) => {
+    const input = e.target.value.trim();
+    if (input) {
+      const [firstName, lastName, email] = input.split(',');
+      const foundGuest = guestList.find(
+        (guest) =>
+          guest.Email.toLowerCase() === email.toLowerCase() &&
+          guest.FirstName.toLowerCase() === firstName.toLowerCase() &&
+          guest.LastName.toLowerCase() === lastName.toLowerCase()
+      );
+      if (foundGuest) {
+        setScannedGuest(foundGuest);
+        setMessage(`Welcome, ${foundGuest.FirstName}!`);
+      } else {
+        setScannedGuest(null);
+        setMessage(`${firstName} is not on the guest list!`);
       }
+    }
+    e.target.value = ''; // Clear the input after processing
+  };
+
+  const handleManualCheck = () => {
+    alert(JSON.stringify(guestList, null, 2));
+  };
+
+  const sendEmail = (guest) => {
+    const qrCodeData = `${guest.FirstName},${guest.LastName},${guest.Email}`;
+    const qrCodeURL = document.getElementById(`qr-code-${guest.Email}`).toDataURL();
+
+    const templateParams = {
+      to_name: guest.FirstName,
+      to_email: guest.Email,
+      qr_code: qrCodeURL,
     };
 
-    fetchTables();
-  }, []);
-
-  const handleTableChange = (e) => {
-    setSelectedTable(e.target.value);
+    emailjs.send('YOUR_SERVICE_ID', 'YOUR_TEMPLATE_ID', templateParams, 'YOUR_USER_ID')
+      .then((response) => {
+        console.log('Email sent successfully!', response.status, response.text);
+      }, (error) => {
+        console.log('Failed to send email:', error);
+      });
   };
 
   return (
-    <div>
-      <h1>Welcome to the Main Page</h1>
-      <div>
-        <label>Select Table:</label>
-        <select onChange={handleTableChange} value={selectedTable}>
-          {tables.map(table => (
-            <option key={table} value={table}>{table}</option>
-          ))}
-        </select>
-      </div>
+    <div className="min-h-screen flex flex-col items-center justify-center p-4">
+      {adminView ? (
+        <div className="w-full max-w-4xl">
+          <h2 className="text-2xl font-bold mb-4">Admin Section</h2>
+          <div className="mb-4">
+            <input type="file" accept=".xlsx" onChange={handleUpload} className="mb-2" />
+            <button
+              onClick={handleManualCheck}
+              className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+            >
+              Manually Check Guest List
+            </button>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="min-w-full bg-white">
+              <thead>
+                <tr>
+                  <th className="py-2 px-4">First Name</th>
+                  <th className="py-2 px-4">Last Name</th>
+                  <th className="py-2 px-4">Email</th>
+                  <th className="py-2 px-4">QR Code</th>
+                  <th className="py-2 px-4">Send Email</th>
+                </tr>
+              </thead>
+              <tbody>
+                {guestList.map((guest, index) => (
+                  <tr key={index}>
+                    <td className="py-2 px-4">{guest.FirstName}</td>
+                    <td className="py-2 px-4">{guest.LastName}</td>
+                    <td className="py-2 px-4">{guest.Email}</td>
+                    <td className="py-2 px-4">
+                      <QRCode
+                        id={`qr-code-${guest.Email}`}
+                        value={`${guest.FirstName},${guest.LastName},${guest.Email}`}
+                        size={64}
+                        level={"H"}
+                      />
+                    </td>
+                    <td className="py-2 px-4">
+                      <button
+                        onClick={() => sendEmail(guest)}
+                        className="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600"
+                      >
+                        Send QR Code
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      ) : (
+        <div className={`min-h-screen w-full flex items-center justify-center ${
+          scannedGuest ? 'bg-green-500' : 'bg-red-500'
+        }`}>
+          <h1 className="text-white text-4xl font-bold">{message}</h1>
+        </div>
+      )}
+
+      <button
+        onClick={() => setAdminView(!adminView)}
+        className="fixed bottom-4 right-4 px-4 py-2 bg-gray-800 text-white rounded hover:bg-gray-900"
+      >
+        {adminView ? 'Switch to User View' : 'Switch to Admin View'}
+      </button>
     </div>
   );
 };
 
-export default MainPage;
-
-
-
-import React, { createContext, useState } from 'react';
-
-// Create the context
-export const TableContext = createContext();
-
-// Create a provider component
-export const TableProvider = ({ children }) => {
-  const [selectedTable, setSelectedTable] = useState('defaultTable'); // Set default or null
-
-  return (
-    <TableContext.Provider value={{ selectedTable, setSelectedTable }}>
-      {children}
-    </TableContext.Provider>
-  );
-};
-
-
-import React, { useContext, useEffect, useState } from 'react';
-import { TableContext } from './TableContext';
-
-const DataPage = () => {
-  const { selectedTable } = useContext(TableContext);
-  const [data, setData] = useState([]);
-
-  useEffect(() => {
-    const fetchDataFromTable = async (tableName) => {
-      try {
-        const response = await fetch(`http://localhost:5000/api/data/${tableName}`);
-        if (!response.ok) throw new Error('Failed to fetch data');
-        const data = await response.json();
-        setData(data);
-      } catch (error) {
-        console.error('Failed to fetch data:', error);
-      }
-    };
-
-    if (selectedTable) {
-      fetchDataFromTable(selectedTable);
-    }
-  }, [selectedTable]);
-
-  return (
-    <div>
-      <h1>Data from Table: {selectedTable}</h1>
-      {/* Render the data table here */}
-    </div>
-  );
-};
-
-export default DataPage;
+export default GalaCheckIn;
