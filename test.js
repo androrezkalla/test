@@ -1,9 +1,12 @@
 import React, { useState } from 'react';
 import * as XLSX from 'xlsx';
 import QRCode from 'qrcode.react';
+import emailjs from 'emailjs-com';
 
 const GalaCheckIn = () => {
   const [guestList, setGuestList] = useState([]);
+  const [scannedGuest, setScannedGuest] = useState(null);
+  const [message, setMessage] = useState('');
   const [adminView, setAdminView] = useState(false);
 
   const handleUpload = (e) => {
@@ -20,14 +23,44 @@ const GalaCheckIn = () => {
     reader.readAsBinaryString(file);
   };
 
+  const handleScanInput = (e) => {
+    const input = e.target.value.trim();
+    if (input) {
+      const [firstName, lastName, email] = input.split(',');
+      const foundGuest = guestList.find(
+        (guest) =>
+          guest.Email.toLowerCase() === email.toLowerCase() &&
+          guest.FirstName.toLowerCase() === firstName.toLowerCase() &&
+          guest.LastName.toLowerCase() === lastName.toLowerCase()
+      );
+      if (foundGuest) {
+        setScannedGuest(foundGuest);
+        setMessage(`Welcome, ${foundGuest.FirstName}!`);
+      } else {
+        setScannedGuest(null);
+        setMessage(`${firstName} is not on the guest list!`);
+      }
+    }
+    e.target.value = ''; // Clear the input after processing
+  };
+
+  const handleManualCheck = () => {
+    alert(JSON.stringify(guestList, null, 2));
+  };
+
   const createOutlookDraft = (guest) => {
     const qrCodeData = `${guest.FirstName},${guest.LastName},${guest.Email}`;
     const qrCodeURL = document.getElementById(`qr-code-${guest.Email}`).toDataURL();
 
-    const subject = `Your QR Code for the Gala Event`;
-    const body = `Dear ${guest.FirstName},%0D%0A%0D%0APlease find your QR code below for the Gala event.%0D%0A%0D%0A<img src="${qrCodeURL}" alt="QR Code" />%0D%0A%0D%0AWe look forward to seeing you there!%0D%0A%0D%0ABest regards,%0D%0AThe Gala Team`;
+    const emailBody = `
+      Dear ${guest.FirstName},<br><br>
+      Please find your QR code attached for the event.<br><br>
+      <img src="${qrCodeURL}" alt="QR Code"><br><br>
+      Best Regards,<br>
+      Event Team
+    `;
 
-    const mailtoLink = `mailto:${guest.Email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+    const mailtoLink = `mailto:${guest.Email}?subject=Your Event QR Code&body=${encodeURIComponent(emailBody)}`;
     window.location.href = mailtoLink;
   };
 
@@ -38,6 +71,12 @@ const GalaCheckIn = () => {
           <h2 className="text-2xl font-bold mb-4">Admin Section</h2>
           <div className="mb-4">
             <input type="file" accept=".xlsx" onChange={handleUpload} className="mb-2" />
+            <button
+              onClick={handleManualCheck}
+              className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+            >
+              Manually Check Guest List
+            </button>
           </div>
           <div className="overflow-x-auto">
             <table className="min-w-full bg-white">
@@ -47,7 +86,7 @@ const GalaCheckIn = () => {
                   <th className="py-2 px-4">Last Name</th>
                   <th className="py-2 px-4">Email</th>
                   <th className="py-2 px-4">QR Code</th>
-                  <th className="py-2 px-4">Create Draft</th>
+                  <th className="py-2 px-4">Create Outlook Draft</th>
                 </tr>
               </thead>
               <tbody>
@@ -79,8 +118,15 @@ const GalaCheckIn = () => {
           </div>
         </div>
       ) : (
-        <div className="min-h-screen w-full flex items-center justify-center bg-gray-200">
-          <h1 className="text-gray-800 text-4xl font-bold">Gala Check-In System</h1>
+        <div className={`min-h-screen w-full flex flex-col items-center justify-center ${scannedGuest ? 'bg-green-500' : 'bg-red-500'}`}>
+          <input
+            type="text"
+            placeholder="Scan QR Code Here"
+            onChange={handleScanInput}
+            className="mb-4 px-4 py-2 border rounded"
+            autoFocus
+          />
+          <h1 className="text-white text-4xl font-bold">{message}</h1>
         </div>
       )}
 
