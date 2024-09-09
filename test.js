@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import * as XLSX from 'xlsx';
 import QRCode from 'qrcode.react';
-import emailjs from 'emailjs-com';
 
 const GalaCheckIn = () => {
   const [guestList, setGuestList] = useState([]);
@@ -46,12 +45,18 @@ const GalaCheckIn = () => {
 
   const createOutlookDraft = (guest) => {
     const qrCodeData = `${guest.FirstName},${guest.LastName},${guest.Email}`;
-    const qrCodeURL = document.getElementById(`qr-code-${guest.Email}`).toDataURL();
+    const qrCodeURL = document.getElementById(`qr-code-${guest.Email}`).toDataURL("image/png");
 
+    // Create a download link for the QR code
+    const downloadLink = document.createElement("a");
+    downloadLink.href = qrCodeURL;
+    downloadLink.download = `${guest.FirstName}_${guest.LastName}_QRCode.png`;
+    downloadLink.click();
+
+    // Generate the email body with instructions to attach the downloaded QR code
     const emailBody = `
       Dear ${guest.FirstName},<br><br>
       Please find your QR code attached for the event.<br><br>
-      <img src="${qrCodeURL}" alt="QR Code"><br><br>
       Best Regards,<br>
       Event Team
     `;
@@ -108,24 +113,20 @@ const GalaCheckIn = () => {
           </div>
         </div>
       ) : (
-        <div className={`min-h-screen w-full flex flex-col justify-center ${scannedGuest === null ? 'bg-gray-800' : scannedGuest ? 'bg-green-500' : 'bg-red-500'}`}>
-    <div className="flex-grow flex items-center justify-center">
-      {scannedGuest === null ? (
-        <h1 className="text-white text-4xl font-bold">Gala Check-In</h1>
-      ) : (
-        <h1 className="text-white text-4xl font-bold">{message}</h1>
-      )}
-    </div>
-    <div className="mb-4 px-4 py-2">
-      <input
-        type="text"
-        placeholder="Scan QR Code Here"
-        onChange={handleScanInput}
-        className="w-full px-4 py-2 border rounded"
-        autoFocus
-      />
-    </div>
-  </div>
+        <div className={`min-h-screen w-full flex flex-col justify-center ${scannedGuest ? 'bg-green-500' : 'bg-red-500'}`}>
+          <div className="flex-grow flex items-center justify-center">
+            <h1 className="text-white text-4xl font-bold">{message}</h1>
+          </div>
+          <div className="mb-4 px-4 py-2">
+            <input
+              type="text"
+              placeholder="Scan QR Code Here"
+              onChange={handleScanInput}
+              className="w-full px-4 py-2 border rounded"
+              autoFocus
+            />
+          </div>
+        </div>
       )}
 
       <button
