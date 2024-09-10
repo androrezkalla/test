@@ -1,10 +1,17 @@
+import os
 import pandas as pd
 import qrcode
-import os
 from email.message import EmailMessage
 
 # Load the Excel file
 guest_list = pd.read_excel('guest_list.xlsx')
+
+# Create directories for QR codes and .eml files
+qr_code_dir = 'qr_codes'
+eml_dir = 'eml_files'
+
+os.makedirs(qr_code_dir, exist_ok=True)
+os.makedirs(eml_dir, exist_ok=True)
 
 def generate_qr_code(data, filename):
     qr = qrcode.QRCode(
@@ -40,9 +47,9 @@ def create_eml_file(first_name, last_name, email, qr_code_path, output_path):
 for index, row in guest_list.iterrows():
     # Generate QR code
     data = f"{row['FirstName']},{row['LastName']},{row['Email']}"
-    qr_code_filename = f"qr_{row['FirstName']}_{row['LastName']}.png"
+    qr_code_filename = os.path.join(qr_code_dir, f"qr_{row['FirstName']}_{row['LastName']}.png")
     generate_qr_code(data, qr_code_filename)
     
     # Create .eml file
-    eml_filename = f"invitation_{row['FirstName']}_{row['LastName']}.eml"
+    eml_filename = os.path.join(eml_dir, f"invitation_{row['FirstName']}_{row['LastName']}.eml")
     create_eml_file(row['FirstName'], row['LastName'], row['Email'], qr_code_filename, eml_filename)
