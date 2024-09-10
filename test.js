@@ -1,142 +1,47 @@
-import React, { useState } from 'react';
-import * as XLSX from 'xlsx';
-import QRCode from 'qrcode.react';
+import pandas as pd
+import qrcode
+import win32com.client as win32
 
-const GalaCheckIn = () => {
-  const [guestList, setGuestList] = useState([]);
-  const [scannedGuest, setScannedGuest] = useState(null);
-  const [message, setMessage] = useState('');
-  const [adminView, setAdminView] = useState(false);
+# Load the Excel file
+guest_list = pd.read_excel('guest_list.xlsx')
 
-  const handleUpload = (e) => {
-    const file = e.target.files[0];
-    const reader = new FileReader();
-    reader.onload = (evt) => {
-      const data = evt.target.result;
-      const workbook = XLSX.read(data, { type: 'binary' });
-      const sheetName = workbook.SheetNames[0];
-      const sheet = workbook.Sheets[sheetName];
-      const guests = XLSX.utils.sheet_to_json(sheet);
-      setGuestList(guests);
-    };
-    reader.readAsBinaryString(file);
-  };
+def generate_qr_code(data, filename):
+    qr = qrcode.QRCode(
+        version=1,
+        error_correction=qrcode.constants.ERROR_CORRECT_L,
+        box_size=10,
+        border=4,
+    )
+    qr.add_data(data)
+    qr.make(fit=True)
 
-  const handleScanInput = (e) => {
-    const input = e.target.value.trim();
-    if (input) {
-      const [firstName, lastName, email] = input.split(',');
-      const foundGuest = guestList.find(
-        (guest) =>
-          guest.Email.toLowerCase() === email.toLowerCase() &&
-          guest.FirstName.toLowerCase() === firstName.toLowerCase() &&
-          guest.LastName.toLowerCase() === lastName.toLowerCase()
-      );
-      if (foundGuest) {
-        setScannedGuest(foundGuest);
-        setMessage(`Welcome, ${foundGuest.FirstName}!`);
-      } else {
-        setScannedGuest(null);
-        setMessage(`${firstName} is not on the guest list!`);
-      }
-    }
-    e.target.value = ''; // Clear the input after processing
-  };
+    img = qr.make_image(fill_color="black", back_color="white")
+    img.save(filename)
 
-  const createOutlookDraft = (guest) => {
-    const qrCodeData = `${guest.FirstName},${guest.LastName},${guest.Email}`;
-    const qrCodeURL = document.getElementById(`qr-code-${guest.Email}`).toDataURL("image/png");
+def create_msg_file(first_name, last_name, email, qr_code_path, output_path):
+    outlook = win32.Dispatch('Outlook.Application')
+    mail = outlook.CreateItem(0)  # 0 represents a Mail item
 
-    // Create a download link for the QR code
-    const downloadLink = document.createElement("a");
-    downloadLink.href = qrCodeURL;
-    downloadLink.download = `${guest.FirstName}_${guest.LastName}_QRCode.png`;
-    downloadLink.click();
+    # Set the subject and body
+    mail.Subject = "Your Invitation"
+    mail.Body = f"Dear {first_name} {last_name},\n\nYou are invited to our event. Please find your QR code attached.\n\nBest regards,\nEvent Organizer"
 
-    // Generate the email body with instructions to attach the downloaded QR code
-    const emailBody = `
-      Dear ${guest.FirstName},<br><br>
-      Please find your QR code attached for the event.<br><br>
-      Best Regards,<br>
-      Event Team
-    `;
+    # Add the recipient's email address
+    mail.To = email
 
-    const mailtoLink = `mailto:${guest.Email}?subject=Your Event QR Code&body=${encodeURIComponent(emailBody)}`;
-    window.location.href = mailtoLink;
-  };
+    # Attach the QR code
+    mail.Attachments.Add(qr_code_path)
 
-  return (
-    <div className="min-h-screen flex flex-col items-center justify-center p-4">
-      {adminView ? (
-        <div className="w-full max-w-4xl">
-          <h2 className="text-2xl font-bold mb-4">Admin Section</h2>
-          <div className="mb-4">
-            <input type="file" accept=".xlsx" onChange={handleUpload} className="mb-2" />
-          </div>
-          <div className="overflow-x-auto">
-            <table className="min-w-full bg-white">
-              <thead>
-                <tr>
-                  <th className="py-2 px-4">First Name</th>
-                  <th className="py-2 px-4">Last Name</th>
-                  <th className="py-2 px-4">Email</th>
-                  <th className="py-2 px-4">QR Code</th>
-                  <th className="py-2 px-4">Create Outlook Draft</th>
-                </tr>
-              </thead>
-              <tbody>
-                {guestList.map((guest, index) => (
-                  <tr key={index}>
-                    <td className="py-2 px-4">{guest.FirstName}</td>
-                    <td className="py-2 px-4">{guest.LastName}</td>
-                    <td className="py-2 px-4">{guest.Email}</td>
-                    <td className="py-2 px-4">
-                      <QRCode
-                        id={`qr-code-${guest.Email}`}
-                        value={`${guest.FirstName},${guest.LastName},${guest.Email}`}
-                        size={64}
-                        level={"H"}
-                      />
-                    </td>
-                    <td className="py-2 px-4">
-                      <button
-                        onClick={() => createOutlookDraft(guest)}
-                        className="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600"
-                      >
-                        Create Draft
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      ) : (
-        <div className={`min-h-screen w-full flex flex-col justify-center ${scannedGuest ? 'bg-green-500' : 'bg-red-500'}`}>
-          <div className="flex-grow flex items-center justify-center">
-            <h1 className="text-white text-4xl font-bold">{message}</h1>
-          </div>
-          <div className="mb-4 px-4 py-2">
-            <input
-              type="text"
-              placeholder="Scan QR Code Here"
-              onChange={handleScanInput}
-              className="w-full px-4 py-2 border rounded"
-              autoFocus
-            />
-          </div>
-        </div>
-      )}
+    # Save the message as a .msg file
+    mail.SaveAs(output_path)
 
-      <button
-        onClick={() => setAdminView(!adminView)}
-        className="fixed bottom-4 right-4 px-4 py-2 bg-gray-800 text-white rounded hover:bg-gray-900"
-      >
-        {adminView ? 'Switch to User View' : 'Switch to Admin View'}
-      </button>
-    </div>
-  );
-};
-
-export default GalaCheckIn;
+# Iterate through the guest list, generate QR codes, and create .msg files
+for index, row in guest_list.iterrows():
+    # Generate QR code
+    data = f"{row['FirstName']},{row['LastName']},{row['Email']}"
+    qr_code_filename = f"qr_{row['FirstName']}_{row['LastName']}.png"
+    generate_qr_code(data, qr_code_filename)
+    
+    # Create .msg file
+    msg_filename = f"invitation_{row['FirstName']}_{row['LastName']}.msg"
+    create_msg_file(row['FirstName'], row['LastName'], row['Email'], qr_code_filename, msg_filename)
