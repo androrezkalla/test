@@ -1,6 +1,7 @@
 import pandas as pd
 import qrcode
-import win32com.client as win32
+import os
+from email.message import EmailMessage
 
 # Load the Excel file
 guest_list = pd.read_excel('guest_list.xlsx')
@@ -18,30 +19,30 @@ def generate_qr_code(data, filename):
     img = qr.make_image(fill_color="black", back_color="white")
     img.save(filename)
 
-def create_msg_file(first_name, last_name, email, qr_code_path, output_path):
-    outlook = win32.Dispatch('Outlook.Application')
-    mail = outlook.CreateItem(0)  # 0 represents a Mail item
-
-    # Set the subject and body
-    mail.Subject = "Your Invitation"
-    mail.Body = f"Dear {first_name} {last_name},\n\nYou are invited to our event. Please find your QR code attached.\n\nBest regards,\nEvent Organizer"
-
-    # Add the recipient's email address
-    mail.To = email
-
+def create_eml_file(first_name, last_name, email, qr_code_path, output_path):
+    msg = EmailMessage()
+    msg['Subject'] = f"Your Invitation, {first_name} {last_name}"
+    msg['From'] = "youremail@example.com"  # Replace with your email or leave as a placeholder
+    msg['To'] = email
+    
+    # Set the email body
+    msg.set_content(f"Dear {first_name} {last_name},\n\nYou are invited to our event. Please find your QR code attached.\n\nBest regards,\nEvent Organizer")
+    
     # Attach the QR code
-    mail.Attachments.Add(qr_code_path)
+    with open(qr_code_path, 'rb') as qr_file:
+        msg.add_attachment(qr_file.read(), maintype='image', subtype='png', filename=os.path.basename(qr_code_path))
 
-    # Save the message as a .msg file
-    mail.SaveAs(output_path)
+    # Save the .eml file
+    with open(output_path, 'wb') as eml_file:
+        eml_file.write(msg.as_bytes())
 
-# Iterate through the guest list, generate QR codes, and create .msg files
+# Iterate through the guest list, generate QR codes, and create .eml files
 for index, row in guest_list.iterrows():
     # Generate QR code
     data = f"{row['FirstName']},{row['LastName']},{row['Email']}"
     qr_code_filename = f"qr_{row['FirstName']}_{row['LastName']}.png"
     generate_qr_code(data, qr_code_filename)
     
-    # Create .msg file
-    msg_filename = f"invitation_{row['FirstName']}_{row['LastName']}.msg"
-    create_msg_file(row['FirstName'], row['LastName'], row['Email'], qr_code_filename, msg_filename)
+    # Create .eml file
+    eml_filename = f"invitation_{row['FirstName']}_{row['LastName']}.eml"
+    create_eml_file(row['FirstName'], row['LastName'], row['Email'], qr_code_filename, eml_filename)
