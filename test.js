@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import * as XLSX from 'xlsx';
-import QRCode from 'qrcode.react';
 import axios from 'axios';
 
 const CheckInSystem = () => {
@@ -66,15 +65,14 @@ const CheckInSystem = () => {
     e.target.value = ''; // Clear the input after processing
   };
 
-  // Send an email with the QR code
+  // Send an email (functionality placeholder)
   const sendEmail = async (guest) => {
-    const qrCodeData = `${guest.FirstName},${guest.LastName},${guest.Email}`;
     try {
-      await axios.post('/api/send-email', { guest, qrCodeData });
-      alert(`Email sent to ${guest.Email}`);
+      await axios.post('/api/send-email', { guest });
+      alert(`Email sent to ${guest.email}`);
     } catch (err) {
       console.error('Error sending email:', err);
-      alert(`Failed to send email to ${guest.Email}`);
+      alert(`Failed to send email to ${guest.email}`);
     }
   };
 
@@ -100,7 +98,6 @@ const CheckInSystem = () => {
                   <th className="py-2 px-4">First Name</th>
                   <th className="py-2 px-4">Last Name</th>
                   <th className="py-2 px-4">Email</th>
-                  <th className="py-2 px-4">QR Code</th>
                   <th className="py-2 px-4">Send Email</th>
                 </tr>
               </thead>
@@ -110,14 +107,6 @@ const CheckInSystem = () => {
                     <td className="py-2 px-4">{guest.first_name}</td>
                     <td className="py-2 px-4">{guest.last_name}</td>
                     <td className="py-2 px-4">{guest.email}</td>
-                    <td className="py-2 px-4">
-                      <QRCode
-                        id={`qr-code-${guest.email}`}
-                        value={`${guest.first_name},${guest.last_name},${guest.email}`}
-                        size={64}
-                        level={"H"}
-                      />
-                    </td>
                     <td className="py-2 px-4">
                       <button
                         onClick={() => sendEmail(guest)}
@@ -148,15 +137,6 @@ const CheckInSystem = () => {
             className="opacity-0"
             style={{ height: 0, width: 0 }}
           />
-          <div className="pb-4">
-            {scannedGuest && (
-              <QRCode
-                value={`${scannedGuest.first_name},${scannedGuest.last_name},${scannedGuest.email}`}
-                size={128}
-                level={"H"}
-              />
-            )}
-          </div>
         </div>
       )}
 
