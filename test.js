@@ -1,31 +1,36 @@
-// server.js or your relevant backend file
-const express = require('express');
-const multer = require('multer');
-const XLSX = require('xlsx');
-const app = express();
-const port = 3001;
+app.post('/upload-guest-list', upload.single('file'), async (req, res) => {
+    try {
+      // Read the uploaded file from the request
+      const workbook = XLSX.read(req.file.buffer, { type: 'buffer' });
+      const sheetName = workbook.SheetNames[0];
+      const sheet = workbook.Sheets[sheetName];
+      const guests = XLSX.utils.sheet_to_json(sheet);
+  
+      // Insert each guest into the database
+      for (let guest of guests) {
+        const { FirstName, LastName, Email } = guest;
+        await pool.query(
+          `INSERT INTO guests (first_name, last_name, email) 
+           VALUES ($1, $2, $3)
+           ON CONFLICT (email) DO NOTHING`, // Avoid duplicate entries based on email
+          [FirstName, LastName, Email]
+        );
+      }
+  
+      res.status(200).send('Guest list uploaded and saved successfully.');
+    } catch (error) {
+      console.error('Error uploading guest list:', error);
+      res.status(500).send('Failed to upload guest list.');
+    }
+  });
 
-const upload = multer({ dest: 'uploads/' });
-
-app.post('/upload-guest-list', upload.single('file'), (req, res) => {
-  if (!req.file) {
-    return res.status(400).send('No file uploaded.');
-  }
-
-  const workbook = XLSX.readFile(req.file.path);
-  const sheetName = workbook.SheetNames[0];
-  const sheet = workbook.Sheets[sheetName];
-  const guestList = XLSX.utils.sheet_to_json(sheet);
-
-  // Save guestList to your database or file system here
-  // Example: database.saveGuestList(guestList);
-
-  res.status(200).send('Guest list uploaded successfully.');
-});
-
-app.listen(port, () => {
-  console.log(`Server running on http://localhost:${port}`);
-});
+  CREATE TABLE guests (
+    id SERIAL PRIMARY KEY,          -- Auto-incrementing ID
+    first_name VARCHAR(255) NOT NULL,
+    last_name VARCHAR(255) NOT NULL,
+    email VARCHAR(255) NOT NULL UNIQUE,  -- Assuming email is unique
+    checked_in BOOLEAN DEFAULT FALSE   -- To track if the guest has checked in
+);
 
 
 import React, { useState } from 'react';
