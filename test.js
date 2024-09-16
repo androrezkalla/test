@@ -12,7 +12,11 @@ const CheckInSystem = () => {
   const fetchGuestList = async () => {
     try {
       const response = await axios.get('/api/guests'); // Update with your actual endpoint
-      setGuestList(response.data);
+      if (Array.isArray(response.data)) {
+        setGuestList(response.data);
+      } else {
+        console.error('Expected an array but received:', response.data);
+      }
     } catch (err) {
       console.error('Error fetching guest list:', err);
     }
@@ -102,21 +106,29 @@ const CheckInSystem = () => {
                 </tr>
               </thead>
               <tbody>
-                {guestList.map((guest, index) => (
-                  <tr key={index}>
-                    <td className="py-2 px-4">{guest.first_name}</td>
-                    <td className="py-2 px-4">{guest.last_name}</td>
-                    <td className="py-2 px-4">{guest.email}</td>
-                    <td className="py-2 px-4">
-                      <button
-                        onClick={() => sendEmail(guest)}
-                        className="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600"
-                      >
-                        Send Email
-                      </button>
+                {Array.isArray(guestList) && guestList.length > 0 ? (
+                  guestList.map((guest, index) => (
+                    <tr key={index}>
+                      <td className="py-2 px-4">{guest.first_name}</td>
+                      <td className="py-2 px-4">{guest.last_name}</td>
+                      <td className="py-2 px-4">{guest.email}</td>
+                      <td className="py-2 px-4">
+                        <button
+                          onClick={() => sendEmail(guest)}
+                          className="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600"
+                        >
+                          Send Email
+                        </button>
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan="4" className="py-2 px-4 text-center">
+                      No guests found.
                     </td>
                   </tr>
-                ))}
+                )}
               </tbody>
             </table>
           </div>
