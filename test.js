@@ -109,16 +109,24 @@ const GalaCheckIn = () => {
           </button>
         </div>
       ) : (
-        // User View: Only show welcome message and logo
-        <div className="flex flex-col items-center justify-center w-full h-full">
-          <div className="mb-6">
-            {/* Placeholder for Logo */}
-            <div className="w-24 h-24 bg-gray-600 rounded-full flex items-center justify-center">
-              <span className="text-white">Logo</span>
+        // User View
+        <div className="flex flex-col items-center justify-center w-full h-full relative">
+          {/* Logo and "Welcome to the Gala" at the top */}
+          <div className="absolute top-0 left-0 right-0 flex flex-col items-center mt-4">
+            <div className="mb-4">
+              {/* Placeholder for Logo */}
+              <div className="w-24 h-24 bg-gray-600 rounded-full flex items-center justify-center">
+                <span className="text-white">Logo</span>
+              </div>
             </div>
+            <h1 className="text-5xl font-bold text-white">Welcome to the Gala</h1>
           </div>
-          <h1 className="text-5xl font-bold text-white mb-8">Welcome to the Gala</h1>
-          <h1 className="text-4xl font-bold text-white">{message}</h1>
+
+          {/* Centered Welcome Message */}
+          <div className="flex-1 flex items-center justify-center">
+            <h1 className="text-6xl font-bold text-white">{message}</h1>
+          </div>
+
           {/* Barely visible input strip at the bottom */}
           <input
             type="text"
