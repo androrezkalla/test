@@ -58,16 +58,12 @@ const GalaCheckIn = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-100 flex flex-col items-center justify-center p-4">
-      {/* Placeholder for Logo */}
-      <div className="flex justify-center mb-6">
-        <div className="w-24 h-24 bg-gray-300 rounded-full flex items-center justify-center">
-          <span className="text-gray-600">Logo</span>
-        </div>
-      </div>
+    <div className={`min-h-screen w-full ${scannedGuest ? 'bg-green-900' : 'bg-red-900'} flex flex-col items-center justify-center p-4`}>
+      {/* "Welcome to the Gala" Heading */}
+      <h1 className="text-5xl font-bold text-white mb-8">Welcome to the Gala</h1>
 
       {/* Main Content */}
-      <div className="w-full max-w-5xl bg-white shadow-lg rounded-lg p-8">
+      <div className="w-full max-w-5xl bg-gray-800 shadow-lg rounded-lg p-8 text-white">
         {adminView ? (
           // Admin View: Upload guest list and view the list
           <div>
@@ -77,20 +73,20 @@ const GalaCheckIn = () => {
                 type="file"
                 accept=".xlsx"
                 onChange={handleUpload}
-                className="mb-4 p-2 border rounded cursor-pointer"
+                className="mb-4 p-2 border rounded cursor-pointer bg-gray-700 text-white"
               />
               <div className="overflow-x-auto w-full">
-                <table className="min-w-full bg-white border border-gray-200 rounded-lg">
+                <table className="min-w-full bg-gray-800 border border-gray-200 rounded-lg">
                   <thead>
-                    <tr className="bg-gray-200">
-                      <th className="py-3 px-4 text-left font-medium text-gray-700">First Name</th>
-                      <th className="py-3 px-4 text-left font-medium text-gray-700">Last Name</th>
-                      <th className="py-3 px-4 text-left font-medium text-gray-700">Email</th>
+                    <tr className="bg-gray-700">
+                      <th className="py-3 px-4 text-left font-medium text-white">First Name</th>
+                      <th className="py-3 px-4 text-left font-medium text-white">Last Name</th>
+                      <th className="py-3 px-4 text-left font-medium text-white">Email</th>
                     </tr>
                   </thead>
                   <tbody>
                     {guestList.map((guest, index) => (
-                      <tr key={index} className="border-b border-gray-100 hover:bg-gray-50">
+                      <tr key={index} className="border-b border-gray-600 hover:bg-gray-600">
                         <td className="py-3 px-4">{guest.first_name}</td>
                         <td className="py-3 px-4">{guest.last_name}</td>
                         <td className="py-3 px-4">{guest.email}</td>
@@ -103,15 +99,15 @@ const GalaCheckIn = () => {
           </div>
         ) : (
           // User View: Scan QR codes
-          <div className={`min-h-screen flex flex-col items-center justify-center ${scannedGuest ? 'bg-green-50' : 'bg-red-50'} p-8 rounded-lg`}>
+          <div className={`min-h-screen flex flex-col items-center justify-center ${scannedGuest ? 'bg-green-900' : 'bg-red-900'} p-8 rounded-lg`}>
             <input
               type="text"
               placeholder="Scan QR Code Here"
               onChange={handleScanInput}
-              className="mb-4 px-4 py-2 border rounded w-full max-w-md text-center focus:outline-none focus:border-blue-500"
+              className="mb-4 px-4 py-2 border rounded w-full max-w-md text-center focus:outline-none focus:border-blue-500 bg-gray-700 text-white"
               autoFocus
             />
-            <h1 className={`text-4xl font-bold ${scannedGuest ? 'text-green-700' : 'text-red-700'}`}>{message}</h1>
+            <h1 className={`text-4xl font-bold ${scannedGuest ? 'text-green-300' : 'text-red-300'}`}>{message}</h1>
           </div>
         )}
 
