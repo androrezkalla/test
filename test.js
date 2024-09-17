@@ -1,12 +1,50 @@
+// Update check-in status
+app.post('/api/check-in', async (req, res) => {
+  const { email } = req.body; // Assuming the email is used to identify the guest
+
+  try {
+    const result = await db.query(
+      'UPDATE guests SET checked_in = TRUE WHERE email = $1 RETURNING *',
+      [email]
+    );
+
+    if (result.rows.length > 0) {
+      res.json(result.rows[0]);
+    } else {
+      res.status(404).json({ message: 'Guest not found' });
+    }
+  } catch (error) {
+    console.error('Error updating check-in status:', error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+});
+
+// Fetch the guest list with check-in status
+app.get('/api/get-guest-list', async (req, res) => {
+  try {
+    const result = await db.query('SELECT * FROM guests');
+    res.json(result.rows);
+  } catch (error) {
+    console.error('Error fetching guest list:', error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+});
+
+
+
+
+
+
+
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 
 const GalaCheckIn = () => {
   const [guestList, setGuestList] = useState([]);
-  const [adminView, setAdminView] = useState(true); // State to toggle between admin and user view
+  const [adminView, setAdminView] = useState(true);
   const [scannedGuest, setScannedGuest] = useState(null);
   const [message, setMessage] = useState('');
-  const [flashColor, setFlashColor] = useState('bg-gradient-to-r from-purple-400 via-pink-500 to-red-500'); // Default to gradient background
+  const [flashColor, setFlashColor] = useState('bg-gradient-to-r from-purple-400 via-pink-500 to-red-500');
 
   // Fetch the guest list from the backend
   const fetchGuestList = async () => {
@@ -30,14 +68,14 @@ const GalaCheckIn = () => {
 
     try {
       await axios.post('http://localhost:5000/api/upload-guest-list', formData);
-      fetchGuestList(); // Refresh the guest list after upload
+      fetchGuestList();
     } catch (error) {
       console.error('Error uploading guest list:', error);
     }
   };
 
   // Handle the scan input for the user view
-  const handleScanInput = (e) => {
+  const handleScanInput = async (e) => {
     const input = e.target.value.trim();
     if (input) {
       const [firstName, lastName, email] = input.split(',');
@@ -47,23 +85,27 @@ const GalaCheckIn = () => {
           guest.first_name.toLowerCase() === firstName.toLowerCase() &&
           guest.last_name.toLowerCase() === lastName.toLowerCase()
       );
+
       if (foundGuest) {
         setScannedGuest(foundGuest);
         setMessage(`Welcome, ${foundGuest.first_name}!`);
-        setFlashColor('bg-green-900'); // Set flash color for success
+        setFlashColor('bg-green-900');
+
+        // Update the check-in status in the backend
+        await axios.post('http://localhost:5000/api/check-in', { email });
       } else {
         setScannedGuest(null);
         setMessage(`${firstName} is not on the guest list!`);
-        setFlashColor('bg-red-900'); // Set flash color for error
+        setFlashColor('bg-red-900');
       }
 
-      // Clear the flash and reset to gradient after a delay
       setTimeout(() => {
-        setFlashColor('bg-gradient-to-r from-purple-400 via-pink-500 to-red-500'); // Reset to gradient
+        setFlashColor('bg-gradient-to-r from-purple-400 via-pink-500 to-red-500');
         setMessage('');
-      }, 2000); // Adjust the delay as needed
+      }, 2000);
+
     }
-    e.target.value = ''; // Clear the input after processing
+    e.target.value = '';
   };
 
   return (
@@ -88,6 +130,7 @@ const GalaCheckIn = () => {
                     <th className="py-3 px-4 text-left font-medium text-white">First Name</th>
                     <th className="py-3 px-4 text-left font-medium text-white">Last Name</th>
                     <th className="py-3 px-4 text-left font-medium text-white">Email</th>
+                    <th className="py-3 px-4 text-left font-medium text-white">Checked In</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -96,6 +139,7 @@ const GalaCheckIn = () => {
                       <td className="py-3 px-4">{guest.first_name}</td>
                       <td className="py-3 px-4">{guest.last_name}</td>
                       <td className="py-3 px-4">{guest.email}</td>
+                      <td className="py-3 px-4">{guest.checked_in ? 'Yes' : 'No'}</td>
                     </tr>
                   ))}
                 </tbody>
