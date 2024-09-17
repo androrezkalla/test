@@ -68,8 +68,8 @@ const GalaCheckIn = () => {
 
   return (
     <div className={`min-h-screen w-full ${flashColor} flex flex-col items-center justify-center p-4 transition-colors duration-300`}>
-      {/* User View */}
       {adminView ? (
+        // Admin View
         <div className="w-full max-w-5xl">
           <h2 className="text-3xl font-semibold mb-6 text-center text-white">Admin Section</h2>
           <div className="mb-8 flex flex-col items-center">
@@ -118,14 +118,15 @@ const GalaCheckIn = () => {
             </div>
           </div>
           <h1 className="text-5xl font-bold text-white mb-8">Welcome to the Gala</h1>
+          <h1 className="text-4xl font-bold text-white">{message}</h1>
+          {/* Barely visible input strip at the bottom */}
           <input
             type="text"
             placeholder="Scan QR Code Here"
             onChange={handleScanInput}
-            className="hidden" // Hide the input box
+            className="fixed bottom-1 w-full bg-transparent text-transparent outline-none focus:outline-none"
             autoFocus
           />
-          <h1 className="text-4xl font-bold text-white">{message}</h1>
         </div>
       )}
     </div>
