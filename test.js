@@ -1,29 +1,27 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import * as XLSX from 'xlsx';
 
 const GalaCheckIn = () => {
   const [guestList, setGuestList] = useState([]);
+  const [adminView, setAdminView] = useState(true); // State to toggle between admin and user view
+  const [scannedGuest, setScannedGuest] = useState(null);
   const [message, setMessage] = useState('');
-  const [adminView, setAdminView] = useState(false);
 
   // Fetch the guest list from the backend
   const fetchGuestList = async () => {
     try {
-      const response = await axios.get('http://localhost:5000/api/guests');
+      const response = await axios.get('http://localhost:5000/api/get-guest-list');
       setGuestList(response.data);
     } catch (error) {
       console.error('Error fetching guest list:', error);
-      setMessage('Error fetching guest list.');
     }
   };
 
   useEffect(() => {
-    // Fetch guest list on component mount
     fetchGuestList();
   }, []);
 
-  // Handle the file upload
+  // Handle the file upload for the admin view
   const handleUpload = async (e) => {
     const file = e.target.files[0];
     const formData = new FormData();
@@ -32,67 +30,99 @@ const GalaCheckIn = () => {
     try {
       await axios.post('http://localhost:5000/api/upload-guest-list', formData);
       fetchGuestList(); // Refresh the guest list after upload
-      setMessage('Guest list uploaded successfully.');
     } catch (error) {
       console.error('Error uploading guest list:', error);
-      setMessage('Error uploading guest list.');
     }
   };
 
-  // Handle the manual check of the guest list
-  const handleManualCheck = () => {
-    alert(JSON.stringify(guestList, null, 2));
+  // Handle the scan input for the user view
+  const handleScanInput = (e) => {
+    const input = e.target.value.trim();
+    if (input) {
+      const [firstName, lastName, email] = input.split(',');
+      const foundGuest = guestList.find(
+        (guest) =>
+          guest.email.toLowerCase() === email.toLowerCase() &&
+          guest.first_name.toLowerCase() === firstName.toLowerCase() &&
+          guest.last_name.toLowerCase() === lastName.toLowerCase()
+      );
+      if (foundGuest) {
+        setScannedGuest(foundGuest);
+        setMessage(`Welcome, ${foundGuest.first_name}!`);
+      } else {
+        setScannedGuest(null);
+        setMessage(`${firstName} is not on the guest list!`);
+      }
+    }
+    e.target.value = ''; // Clear the input after processing
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center p-4">
-      {adminView ? (
-        <div className="w-full max-w-4xl">
-          <h2 className="text-2xl font-bold mb-4">Admin Section</h2>
-          <div className="mb-4">
-            <input type="file" accept=".xlsx" onChange={handleUpload} className="mb-2" />
-            <button
-              onClick={handleManualCheck}
-              className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
-            >
-              Manually Check Guest List
-            </button>
-          </div>
-          <div className="overflow-x-auto">
-            <table className="min-w-full bg-white">
-              <thead>
-                <tr>
-                  <th className="py-2 px-4">First Name</th>
-                  <th className="py-2 px-4">Last Name</th>
-                  <th className="py-2 px-4">Email</th>
-                </tr>
-              </thead>
-              <tbody>
-                {guestList.map((guest, index) => (
-                  <tr key={index}>
-                    <td className="py-2 px-4">{guest.first_name}</td>
-                    <td className="py-2 px-4">{guest.last_name}</td>
-                    <td className="py-2 px-4">{guest.email}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+    <div className="min-h-screen bg-gray-100 flex flex-col items-center justify-center p-4">
+      {/* Placeholder for Logo */}
+      <div className="flex justify-center mb-6">
+        <div className="w-24 h-24 bg-gray-300 rounded-full flex items-center justify-center">
+          <span className="text-gray-600">Logo</span>
         </div>
-      ) : (
-        <div className="min-h-screen w-full flex flex-col items-center justify-center">
-          <h1 className="text-4xl font-bold">Guest Check-In</h1>
-          <p>Switch to the admin view to manage the guest list.</p>
-        </div>
-      )}
+      </div>
 
-      <button
-        onClick={() => setAdminView(!adminView)}
-        className="fixed bottom-4 right-4 px-4 py-2 bg-gray-800 text-white rounded hover:bg-gray-900"
-      >
-        {adminView ? 'Switch to User View' : 'Switch to Admin View'}
-      </button>
-      {message && <p className="text-red-500 mt-4">{message}</p>}
+      {/* Main Content */}
+      <div className="w-full max-w-5xl bg-white shadow-lg rounded-lg p-8">
+        {adminView ? (
+          // Admin View: Upload guest list and view the list
+          <div>
+            <h2 className="text-3xl font-semibold mb-6 text-center">Admin Section</h2>
+            <div className="mb-8 flex flex-col items-center">
+              <input
+                type="file"
+                accept=".xlsx"
+                onChange={handleUpload}
+                className="mb-4 p-2 border rounded cursor-pointer"
+              />
+              <div className="overflow-x-auto w-full">
+                <table className="min-w-full bg-white border border-gray-200 rounded-lg">
+                  <thead>
+                    <tr className="bg-gray-200">
+                      <th className="py-3 px-4 text-left font-medium text-gray-700">First Name</th>
+                      <th className="py-3 px-4 text-left font-medium text-gray-700">Last Name</th>
+                      <th className="py-3 px-4 text-left font-medium text-gray-700">Email</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {guestList.map((guest, index) => (
+                      <tr key={index} className="border-b border-gray-100 hover:bg-gray-50">
+                        <td className="py-3 px-4">{guest.first_name}</td>
+                        <td className="py-3 px-4">{guest.last_name}</td>
+                        <td className="py-3 px-4">{guest.email}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        ) : (
+          // User View: Scan QR codes
+          <div className={`min-h-screen flex flex-col items-center justify-center ${scannedGuest ? 'bg-green-50' : 'bg-red-50'} p-8 rounded-lg`}>
+            <input
+              type="text"
+              placeholder="Scan QR Code Here"
+              onChange={handleScanInput}
+              className="mb-4 px-4 py-2 border rounded w-full max-w-md text-center focus:outline-none focus:border-blue-500"
+              autoFocus
+            />
+            <h1 className={`text-4xl font-bold ${scannedGuest ? 'text-green-700' : 'text-red-700'}`}>{message}</h1>
+          </div>
+        )}
+
+        {/* Button to toggle between Admin and User views */}
+        <button
+          onClick={() => setAdminView(!adminView)}
+          className="mt-8 w-full bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 transition duration-300"
+        >
+          {adminView ? 'Switch to User View' : 'Switch to Admin View'}
+        </button>
+      </div>
     </div>
   );
 };
