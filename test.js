@@ -6,6 +6,7 @@ const GalaCheckIn = () => {
   const [adminView, setAdminView] = useState(true); // State to toggle between admin and user view
   const [scannedGuest, setScannedGuest] = useState(null);
   const [message, setMessage] = useState('');
+  const [flashColor, setFlashColor] = useState('bg-gray-900'); // Default to grey background
 
   // Fetch the guest list from the backend
   const fetchGuestList = async () => {
@@ -49,76 +50,84 @@ const GalaCheckIn = () => {
       if (foundGuest) {
         setScannedGuest(foundGuest);
         setMessage(`Welcome, ${foundGuest.first_name}!`);
+        setFlashColor('bg-green-900');
       } else {
         setScannedGuest(null);
         setMessage(`${firstName} is not on the guest list!`);
+        setFlashColor('bg-red-900');
       }
+
+      // Clear the flash and reset to grey after a delay
+      setTimeout(() => {
+        setFlashColor('bg-gray-900');
+        setMessage('');
+      }, 2000); // Adjust the delay as needed
     }
     e.target.value = ''; // Clear the input after processing
   };
 
   return (
-    <div className={`min-h-screen w-full ${scannedGuest ? 'bg-green-900' : 'bg-red-900'} flex flex-col items-center justify-center p-4`}>
-      {/* "Welcome to the Gala" Heading */}
-      <h1 className="text-5xl font-bold text-white mb-8">Welcome to the Gala</h1>
-
-      {/* Main Content */}
-      <div className="w-full max-w-5xl bg-gray-800 shadow-lg rounded-lg p-8 text-white">
-        {adminView ? (
-          // Admin View: Upload guest list and view the list
-          <div>
-            <h2 className="text-3xl font-semibold mb-6 text-center">Admin Section</h2>
-            <div className="mb-8 flex flex-col items-center">
-              <input
-                type="file"
-                accept=".xlsx"
-                onChange={handleUpload}
-                className="mb-4 p-2 border rounded cursor-pointer bg-gray-700 text-white"
-              />
-              <div className="overflow-x-auto w-full">
-                <table className="min-w-full bg-gray-800 border border-gray-200 rounded-lg">
-                  <thead>
-                    <tr className="bg-gray-700">
-                      <th className="py-3 px-4 text-left font-medium text-white">First Name</th>
-                      <th className="py-3 px-4 text-left font-medium text-white">Last Name</th>
-                      <th className="py-3 px-4 text-left font-medium text-white">Email</th>
+    <div className={`min-h-screen w-full ${flashColor} flex flex-col items-center justify-center p-4 transition-colors duration-300`}>
+      {/* User View */}
+      {adminView ? (
+        <div className="w-full max-w-5xl">
+          <h2 className="text-3xl font-semibold mb-6 text-center text-white">Admin Section</h2>
+          <div className="mb-8 flex flex-col items-center">
+            <input
+              type="file"
+              accept=".xlsx"
+              onChange={handleUpload}
+              className="mb-4 p-2 rounded cursor-pointer bg-gray-700 text-white"
+            />
+            <div className="overflow-x-auto w-full">
+              <table className="min-w-full bg-gray-800 rounded-lg">
+                <thead>
+                  <tr className="bg-gray-700">
+                    <th className="py-3 px-4 text-left font-medium text-white">First Name</th>
+                    <th className="py-3 px-4 text-left font-medium text-white">Last Name</th>
+                    <th className="py-3 px-4 text-left font-medium text-white">Email</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {guestList.map((guest, index) => (
+                    <tr key={index} className="border-b border-gray-600 hover:bg-gray-600">
+                      <td className="py-3 px-4">{guest.first_name}</td>
+                      <td className="py-3 px-4">{guest.last_name}</td>
+                      <td className="py-3 px-4">{guest.email}</td>
                     </tr>
-                  </thead>
-                  <tbody>
-                    {guestList.map((guest, index) => (
-                      <tr key={index} className="border-b border-gray-600 hover:bg-gray-600">
-                        <td className="py-3 px-4">{guest.first_name}</td>
-                        <td className="py-3 px-4">{guest.last_name}</td>
-                        <td className="py-3 px-4">{guest.email}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+                  ))}
+                </tbody>
+              </table>
             </div>
           </div>
-        ) : (
-          // User View: Scan QR codes
-          <div className={`min-h-screen flex flex-col items-center justify-center ${scannedGuest ? 'bg-green-900' : 'bg-red-900'} p-8 rounded-lg`}>
-            <input
-              type="text"
-              placeholder="Scan QR Code Here"
-              onChange={handleScanInput}
-              className="mb-4 px-4 py-2 border rounded w-full max-w-md text-center focus:outline-none focus:border-blue-500 bg-gray-700 text-white"
-              autoFocus
-            />
-            <h1 className={`text-4xl font-bold ${scannedGuest ? 'text-green-300' : 'text-red-300'}`}>{message}</h1>
+          {/* Button to toggle between Admin and User views */}
+          <button
+            onClick={() => setAdminView(!adminView)}
+            className="fixed bottom-4 right-4 bg-blue-600 text-white py-3 px-6 rounded-lg hover:bg-blue-700 transition duration-300"
+          >
+            Switch to User View
+          </button>
+        </div>
+      ) : (
+        // User View: Only show welcome message and logo
+        <div className="flex flex-col items-center justify-center w-full h-full">
+          <div className="mb-6">
+            {/* Placeholder for Logo */}
+            <div className="w-24 h-24 bg-gray-600 rounded-full flex items-center justify-center">
+              <span className="text-white">Logo</span>
+            </div>
           </div>
-        )}
-
-        {/* Button to toggle between Admin and User views */}
-        <button
-          onClick={() => setAdminView(!adminView)}
-          className="mt-8 w-full bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 transition duration-300"
-        >
-          {adminView ? 'Switch to User View' : 'Switch to Admin View'}
-        </button>
-      </div>
+          <h1 className="text-5xl font-bold text-white mb-8">Welcome to the Gala</h1>
+          <input
+            type="text"
+            placeholder="Scan QR Code Here"
+            onChange={handleScanInput}
+            className="hidden" // Hide the input box
+            autoFocus
+          />
+          <h1 className="text-4xl font-bold text-white">{message}</h1>
+        </div>
+      )}
     </div>
   );
 };
