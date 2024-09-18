@@ -3,14 +3,20 @@ import pandas as pd
 import qrcode
 import win32com.client
 
-# Load the Excel file
-guest_list = pd.read_excel('guest_list.xlsx')
+# Define the base path to the Desktop
+desktop_path = os.path.join(os.path.expanduser("~"), "Desktop")
 
-# Use a simple, short path for saving .msg files
-qr_code_dir = 'C:\\Temp\\qr_codes'
-msg_dir = 'C:\\Temp\\msg_files'
+# Define the paths for the QR codes and .msg files within the 'galagen' folder on the Desktop
+base_dir = os.path.join(desktop_path, 'galagen')
+qr_code_dir = os.path.join(base_dir, 'qr_codes')
+msg_dir = os.path.join(base_dir, 'msg_files')
+
+# Create directories for QR codes and .msg files
 os.makedirs(qr_code_dir, exist_ok=True)
 os.makedirs(msg_dir, exist_ok=True)
+
+# Load the Excel file
+guest_list = pd.read_excel('guest_list.xlsx')
 
 def generate_qr_code(data, filename):
     qr = qrcode.QRCode(
