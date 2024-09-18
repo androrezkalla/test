@@ -6,9 +6,11 @@ import win32com.client
 # Load the Excel file
 guest_list = pd.read_excel('guest_list.xlsx')
 
-# Create directories for QR codes
+# Create directories for QR codes and .msg files
 qr_code_dir = 'qr_codes'
+msg_dir = 'msg_files'
 os.makedirs(qr_code_dir, exist_ok=True)
+os.makedirs(msg_dir, exist_ok=True)
 
 def generate_qr_code(data, filename):
     qr = qrcode.QRCode(
@@ -23,7 +25,7 @@ def generate_qr_code(data, filename):
     img = qr.make_image(fill_color="black", back_color="white")
     img.save(filename)
 
-def create_outlook_draft(first_name, last_name, email, qr_code_path):
+def create_outlook_msg(first_name, last_name, email, qr_code_path, msg_filename):
     # Create an Outlook application instance
     outlook = win32com.client.Dispatch('Outlook.Application')
     mail = outlook.CreateItem(0)  # 0: olMailItem
@@ -36,17 +38,19 @@ def create_outlook_draft(first_name, last_name, email, qr_code_path):
     # Attach the QR code
     mail.Attachments.Add(os.path.abspath(qr_code_path))
 
-    # Save as a draft in Outlook
-    mail.Save()  # This saves the mail as a draft in Outlook
+    # Save as .msg file
+    msg_filepath = os.path.join(msg_dir, msg_filename)
+    mail.SaveAs(msg_filepath)  # This saves the mail as a .msg file
 
-# Iterate through the guest list, generate QR codes, and create Outlook drafts
+# Iterate through the guest list, generate QR codes, and create .msg files
 for index, row in guest_list.iterrows():
     # Generate QR code
     data = f"{row['FirstName']},{row['LastName']},{row['Email']}"
     qr_code_filename = os.path.join(qr_code_dir, f"qr_{row['FirstName']}_{row['LastName']}.png")
     generate_qr_code(data, qr_code_filename)
     
-    # Create an Outlook draft email
-    create_outlook_draft(row['FirstName'], row['LastName'], row['Email'], qr_code_filename)
+    # Create a .msg file for the email
+    msg_filename = f"invitation_{row['FirstName']}_{row['LastName']}.msg"
+    create_outlook_msg(row['FirstName'], row['LastName'], row['Email'], qr_code_filename, msg_filename)
 
-print("Draft emails created in Outlook.")
+print("Emails saved as .msg files.")
