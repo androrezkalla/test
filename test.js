@@ -1,103 +1,181 @@
-CREATE TABLE checked_in_guests (
-  id SERIAL PRIMARY KEY,
-  email VARCHAR(255) UNIQUE NOT NULL,
-  first_name VARCHAR(100),
-  last_name VARCHAR(100),
-  check_in_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
+import * as XLSX from 'xlsx'; // Import xlsx
 
+const GalaCheckIn = () => {
+  const [guestList, setGuestList] = useState([]);
+  const [checkedInGuests, setCheckedInGuests] = useState([]); // State to hold checked-in guests
+  const [adminView, setAdminView] = useState(true); // State to toggle between admin and user view
+  const [scannedGuest, setScannedGuest] = useState(null);
+  const [message, setMessage] = useState('');
+  const [flashColor, setFlashColor] = useState('bg-gray-900'); // Default to grey background
 
-
-const { Pool } = require('pg'); // Import pg module
-const pool = new Pool({
-  user: 'your_db_user',
-  host: 'localhost',
-  database: 'your_database',
-  password: 'your_db_password',
-  port: 5432,
-});
-
-// Endpoint to mark the guest as checked-in
-app.post('/api/check-in', async (req, res) => {
-  const { email, first_name, last_name } = req.body;
-
-  try {
-    // Check if the guest has already checked in
-    const checkQuery = 'SELECT * FROM checked_in_guests WHERE email = $1';
-    const checkResult = await pool.query(checkQuery, [email.toLowerCase()]);
-
-    if (checkResult.rows.length > 0) {
-      return res.status(400).json({ message: 'Guest has already checked in.' });
+  // Fetch the guest list from the backend
+  const fetchGuestList = async () => {
+    try {
+      const response = await axios.get('http://localhost:5000/api/get-guest-list');
+      setGuestList(response.data);
+    } catch (error) {
+      console.error('Error fetching guest list:', error);
     }
+  };
 
-    // Insert the guest into the checked_in_guests table
-    const insertQuery = `
-      INSERT INTO checked_in_guests (email, first_name, last_name)
-      VALUES ($1, $2, $3)
-      RETURNING *;
-    `;
-    const values = [email.toLowerCase(), first_name, last_name];
+  // Fetch the checked-in guests from the backend
+  const fetchCheckedInGuests = async () => {
+    try {
+      const response = await axios.get('http://localhost:5000/api/checked-in-guests');
+      setCheckedInGuests(response.data);
+    } catch (error) {
+      console.error('Error fetching checked-in guests:', error);
+    }
+  };
 
-    const result = await pool.query(insertQuery, values);
-    res.status(200).json({ message: 'Guest checked in successfully.', guest: result.rows[0] });
-  } catch (error) {
-    console.error('Error in /api/check-in:', error);
-    res.status(500).json({ message: 'Error checking in guest', error });
-  }
-});
+  useEffect(() => {
+    fetchGuestList();
+    fetchCheckedInGuests(); // Fetch checked-in guests on component mount
+  }, []);
 
+  // Handle the file upload for the admin view
+  const handleUpload = async (e) => {
+    const file = e.target.files[0];
+    const formData = new FormData();
+    formData.append('file', file);
 
+    try {
+      await axios.post('http://localhost:5000/api/upload-guest-list', formData);
+      fetchGuestList(); // Refresh the guest list after upload
+    } catch (error) {
+      console.error('Error uploading guest list:', error);
+    }
+  };
 
-try {
-  await axios.post('http://localhost:5000/api/check-in', {
-    email: foundGuest.email,
-    first_name: foundGuest.first_name,
-    last_name: foundGuest.last_name
-  });
-} catch (error) {
-  console.error('Error marking check-in status:', error.response ? error.response.data : error.message);
-}
+  // Handle the scan input for the user view
+  const handleScanInput = async (e) => {
+    const input = e.target.value.trim();
+    if (input) {
+      const [firstName, lastName, email] = input.split(',');
+      const foundGuest = guestList.find(
+        (guest) =>
+          guest.email.toLowerCase() === email.toLowerCase() &&
+          guest.first_name.toLowerCase() === firstName.toLowerCase() &&
+          guest.last_name.toLowerCase() === lastName.toLowerCase()
+      );
+      if (foundGuest) {
+        setScannedGuest(foundGuest);
+        setMessage(`Welcome, ${foundGuest.first_name}!`);
+        setFlashColor('bg-green-900');
 
+        // Mark guest as checked-in in the backend
+        try {
+          await axios.post('http://localhost:5000/api/check-in', {
+            email: foundGuest.email,
+            first_name: foundGuest.first_name,
+            last_name: foundGuest.last_name
+          });
+          fetchCheckedInGuests(); // Refresh the checked-in guests list
+        } catch (error) {
+          console.error('Error marking check-in status:', error.response ? error.response.data : error.message);
+        }
+      } else {
+        setScannedGuest(null);
+        setMessage(`${firstName} is not on the guest list!`);
+        setFlashColor('bg-red-900');
+      }
 
+      // Clear the flash and reset to grey after a delay
+      setTimeout(() => {
+        setFlashColor('bg-gray-900');
+        setMessage('');
+      }, 2000); // Adjust the delay as needed
+    }
+    e.target.value = ''; // Clear the input after processing
+  };
 
-// Endpoint to get all checked-in guests
-app.get('/api/checked-in-guests', async (req, res) => {
-  try {
-    const result = await pool.query('SELECT * FROM checked_in_guests ORDER BY check_in_time DESC');
-    res.status(200).json(result.rows);
-  } catch (error) {
-    console.error('Error in /api/checked-in-guests:', error);
-    res.status(500).json({ message: 'Error fetching checked-in guests', error });
-  }
-});
+  // Export checked-in guests to Excel
+  const exportToExcel = () => {
+    // Create worksheet from the checked-in guests data
+    const ws = XLSX.utils.json_to_sheet(checkedInGuests);
+    // Create a new workbook and append the worksheet
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Checked-In Guests');
+    // Convert the workbook to a binary Excel file
+    XLSX.writeFile(wb, 'checked_in_guests.xlsx');
+  };
 
-
-
-
-
-// Fetch the checked-in guests from the backend
-const fetchCheckedInGuests = async () => {
-  try {
-    const response = await axios.get('http://localhost:5000/api/checked-in-guests');
-    setCheckedInGuests(response.data);
-  } catch (error) {
-    console.error('Error fetching checked-in guests:', error);
-  }
+  return (
+    <div className={`min-h-screen w-full ${flashColor} flex flex-col items-center justify-center p-4 transition-colors duration-300`}>
+      {adminView ? (
+        // Admin View
+        <div className="w-full max-w-5xl">
+          <h2 className="text-3xl font-semibold mb-6 text-center text-white">Admin Section</h2>
+          <div className="mb-8 flex flex-col items-center">
+            <input
+              type="file"
+              accept=".xlsx"
+              onChange={handleUpload}
+              className="mb-4 p-2 rounded cursor-pointer bg-gray-700 text-white"
+            />
+            <div className="overflow-x-auto w-full mb-8">
+              <h3 className="text-xl font-semibold text-white mb-4">Checked-In Guests</h3>
+              <table className="min-w-full bg-gray-800 rounded-lg">
+                <thead>
+                  <tr className="bg-gray-700">
+                    <th className="py-3 px-4 text-left font-medium text-white">First Name</th>
+                    <th className="py-3 px-4 text-left font-medium text-white">Last Name</th>
+                    <th className="py-3 px-4 text-left font-medium text-white">Email</th>
+                    <th className="py-3 px-4 text-left font-medium text-white">Check-In Time</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {checkedInGuests.map((guest, index) => (
+                    <tr key={index} className="border-b border-gray-600 hover:bg-gray-600">
+                      <td className="py-3 px-4">{guest.first_name}</td>
+                      <td className="py-3 px-4">{guest.last_name}</td>
+                      <td className="py-3 px-4">{guest.email}</td>
+                      <td className="py-3 px-4">{new Date(guest.check_in_time).toLocaleString()}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            {/* Export to Excel Button */}
+            <button
+              onClick={exportToExcel}
+              className="mb-4 bg-green-600 text-white py-2 px-4 rounded-lg hover:bg-green-700 transition duration-300"
+            >
+              Export to Excel
+            </button>
+          </div>
+          {/* Button to toggle between Admin and User views */}
+          <button
+            onClick={() => setAdminView(!adminView)}
+            className="fixed bottom-4 right-4 bg-blue-600 text-white py-3 px-6 rounded-lg hover:bg-blue-700 transition duration-300"
+          >
+            Switch to User View
+          </button>
+        </div>
+      ) : (
+        // User View: Only show welcome message and logo
+        <div className="flex flex-col items-center justify-center w-full h-full">
+          <div className="mb-6">
+            {/* Placeholder for Logo */}
+            <div className="w-24 h-24 bg-gray-600 rounded-full flex items-center justify-center">
+              <span className="text-white">Logo</span>
+            </div>
+          </div>
+          <h1 className="text-5xl font-bold text-white mb-8">{message}</h1>
+          {/* Barely visible input strip at the bottom */}
+          <input
+            type="text"
+            placeholder="Scan QR Code Here"
+            onChange={handleScanInput}
+            className="fixed bottom-1 w-full bg-transparent text-transparent outline-none focus:outline-none"
+            autoFocus
+          />
+        </div>
+      )}
+    </div>
+  );
 };
 
-// Call fetchCheckedInGuests in a useEffect hook in the admin component to load the data on mount
-useEffect(() => {
-  fetchCheckedInGuests();
-}, []);
-
-// Render the checked-in guests in the admin view
-<tbody>
-  {checkedInGuests.map((guest, index) => (
-    <tr key={index} className="border-b border-gray-600 hover:bg-gray-600">
-      <td className="py-3 px-4">{guest.first_name}</td>
-      <td className="py-3 px-4">{guest.last_name}</td>
-      <td className="py-3 px-4">{guest.email}</td>
-      <td className="py-3 px-4">{new Date(guest.check_in_time).toLocaleString()}</td>
-    </tr>
-  ))}
-</tbody>
+export default GalaCheckIn;
