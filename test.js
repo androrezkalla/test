@@ -6,9 +6,9 @@ import win32com.client
 # Load the Excel file
 guest_list = pd.read_excel('guest_list.xlsx')
 
-# Create directories for QR codes and .msg files
-qr_code_dir = 'qr_codes'
-msg_dir = 'msg_files'
+# Use a simple, short path for saving .msg files
+qr_code_dir = 'C:\\Temp\\qr_codes'
+msg_dir = 'C:\\Temp\\msg_files'
 os.makedirs(qr_code_dir, exist_ok=True)
 os.makedirs(msg_dir, exist_ok=True)
 
@@ -42,7 +42,10 @@ def create_outlook_msg(first_name, last_name, email, qr_code_path, msg_filename)
         # Save as .msg file
         msg_filepath = os.path.join(msg_dir, msg_filename)
         
-        # Save as .msg format (9 indicates .msg format)
+        # Output debug information
+        print(f"Attempting to save .msg file to: {msg_filepath}")
+        
+        # Save as .msg format (3 indicates .msg format)
         mail.SaveAs(msg_filepath, 3)  # 3 is the OlSaveAsType for .msg format
 
     except Exception as e:
