@@ -26,21 +26,27 @@ def generate_qr_code(data, filename):
     img.save(filename)
 
 def create_outlook_msg(first_name, last_name, email, qr_code_path, msg_filename):
-    # Create an Outlook application instance
-    outlook = win32com.client.Dispatch('Outlook.Application')
-    mail = outlook.CreateItem(0)  # 0: olMailItem
+    try:
+        # Create an Outlook application instance
+        outlook = win32com.client.Dispatch('Outlook.Application')
+        mail = outlook.CreateItem(0)  # 0: olMailItem
 
-    # Set the email properties
-    mail.Subject = f"Your Invitation, {first_name} {last_name}"
-    mail.To = email
-    mail.Body = f"Dear {first_name} {last_name},\n\nYou are invited to our event. Please find your QR code attached.\n\nBest regards,\nEvent Organizer"
-    
-    # Attach the QR code
-    mail.Attachments.Add(os.path.abspath(qr_code_path))
+        # Set the email properties
+        mail.Subject = f"Your Invitation, {first_name} {last_name}"
+        mail.To = email
+        mail.Body = f"Dear {first_name} {last_name},\n\nYou are invited to our event. Please find your QR code attached.\n\nBest regards,\nEvent Organizer"
+        
+        # Attach the QR code
+        mail.Attachments.Add(os.path.abspath(qr_code_path))
 
-    # Save as .msg file
-    msg_filepath = os.path.join(msg_dir, msg_filename)
-    mail.SaveAs(msg_filepath)  # This saves the mail as a .msg file
+        # Save as .msg file
+        msg_filepath = os.path.join(msg_dir, msg_filename)
+        
+        # Save as .msg format (9 indicates .msg format)
+        mail.SaveAs(msg_filepath, 3)  # 3 is the OlSaveAsType for .msg format
+
+    except Exception as e:
+        print(f"Failed to save .msg file for {first_name} {last_name}: {e}")
 
 # Iterate through the guest list, generate QR codes, and create .msg files
 for index, row in guest_list.iterrows():
@@ -53,4 +59,4 @@ for index, row in guest_list.iterrows():
     msg_filename = f"invitation_{row['FirstName']}_{row['LastName']}.msg"
     create_outlook_msg(row['FirstName'], row['LastName'], row['Email'], qr_code_filename, msg_filename)
 
-print("Emails saved as .msg files.")
+print("Processing completed.")
