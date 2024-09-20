@@ -1,71 +1,84 @@
-import os
-import pandas as pd
-import qrcode
-import win32com.client
+const express = require('express');
+const app = express();
+const pool = require('./db'); // Assuming you're using a PostgreSQL pool
 
-# Define the base path to the Desktop
-desktop_path = os.path.join(os.path.expanduser("~"), "Desktop")
+// API to mark guest as checked-in
+app.put('/api/mark-checked-in/:guestId', async (req, res) => {
+  const { guestId } = req.params;
+  try {
+    const result = await pool.query(
+      'UPDATE guests SET checked_in = true WHERE id = $1 RETURNING *',
+      [guestId]
+    );
+    if (result.rowCount === 0) {
+      return res.status(404).json({ message: 'Guest not found' });
+    }
+    res.json(result.rows[0]);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
 
-# Define the paths for the QR codes and .msg files within the 'galagen' folder on the Desktop
-base_dir = os.path.join(desktop_path, 'galagen')
-qr_code_dir = os.path.join(base_dir, 'qr_codes')
-msg_dir = os.path.join(base_dir, 'msg_files')
+// Example: Starting the server
+app.listen(5000, () => {
+  console.log('Server is running on port 5000');
+});
 
-# Create directories for QR codes and .msg files
-os.makedirs(qr_code_dir, exist_ok=True)
-os.makedirs(msg_dir, exist_ok=True)
 
-# Load the Excel file
-guest_list = pd.read_excel('guest_list.xlsx')
 
-def generate_qr_code(data, filename):
-    qr = qrcode.QRCode(
-        version=1,
-        error_correction=qrcode.constants.ERROR_CORRECT_L,
-        box_size=10,
-        border=4,
-    )
-    qr.add_data(data)
-    qr.make(fit=True)
 
-    img = qr.make_image(fill_color="black", back_color="white")
-    img.save(filename)
+const handleScanInput = (input) => {
+  const [firstName, lastName, email] = input.split(',').map(part => part.trim());
 
-def create_outlook_msg(first_name, last_name, email, qr_code_path, msg_filename):
-    try:
-        # Create an Outlook application instance
-        outlook = win32com.client.Dispatch('Outlook.Application')
-        mail = outlook.CreateItem(0)  # 0: olMailItem
+  const foundGuest = guestList.find(
+    (guest) =>
+      guest.email.toLowerCase() === email.toLowerCase() &&
+      guest.first_name.toLowerCase() === firstName.toLowerCase() &&
+      guest.last_name.toLowerCase() === lastName.toLowerCase()
+  );
 
-        # Set the email properties
-        mail.Subject = f"Your Invitation, {first_name} {last_name}"
-        mail.To = email
-        mail.Body = f"Dear {first_name} {last_name},\n\nYou are invited to our event. Please find your QR code attached.\n\nBest regards,\nEvent Organizer"
-        
-        # Attach the QR code
-        mail.Attachments.Add(os.path.abspath(qr_code_path))
+  if (foundGuest) {
+    if (foundGuest.checked_in) {
+      setBgImage(failedBg); // Set to failed background
+      setMessage(`${foundGuest.first_name} is already checked in!`);
+      setMessageColor('text-yellow-500'); // Change text color to yellow to indicate warning
+    } else {
+      // Mark the guest as checked in
+      setBgImage(successBg); // Set to success background
+      setMessage(`Welcome, ${foundGuest.first_name}!`);
+      setMessageColor('text-green-500');
 
-        # Save as .msg file
-        msg_filepath = os.path.join(msg_dir, msg_filename)
-        
-        # Output debug information
-        print(f"Attempting to save .msg file to: {msg_filepath}")
-        
-        # Save as .msg format (3 indicates .msg format)
-        mail.SaveAs(msg_filepath, 3)  # 3 is the OlSaveAsType for .msg format
+      // Mark the guest as checked in in the backend
+      markAsCheckedIn(foundGuest.id);
 
-    except Exception as e:
-        print(f"Failed to save .msg file for {first_name} {last_name}: {e}")
+      // Update the local guestList to reflect the checked-in status
+      const updatedGuestList = guestList.map((guest) =>
+        guest.id === foundGuest.id ? { ...guest, checked_in: true } : guest
+      );
+      setGuestList(updatedGuestList);
+    }
+  } else {
+    setBgImage(failedBg); // Set to failed background
+    setMessage(`${firstName} is not on the guest list!`);
+    setMessageColor('text-red-500');
+  }
 
-# Iterate through the guest list, generate QR codes, and create .msg files
-for index, row in guest_list.iterrows():
-    # Generate QR code
-    data = f"{row['FirstName']},{row['LastName']},{row['Email']}"
-    qr_code_filename = os.path.join(qr_code_dir, f"qr_{row['FirstName']}_{row['LastName']}.png")
-    generate_qr_code(data, qr_code_filename)
-    
-    # Create a .msg file for the email
-    msg_filename = f"invitation_{row['FirstName']}_{row['LastName']}.msg"
-    create_outlook_msg(row['FirstName'], row['LastName'], row['Email'], qr_code_filename, msg_filename)
+  // Reset the background and message after 2 seconds
+  setTimeout(() => {
+    setBgImage(standardBg); // Reset background
+    setMessage('');
+    setMessageColor('text-white'); // Reset text color
+  }, 2000);
 
-print("Processing completed.")
+  e.target.value = ''; // Clear the input field after handling the scan
+};
+
+// Function to mark guest as checked-in in the backend
+const markAsCheckedIn = async (guestId) => {
+  try {
+    await axios.put(`http://localhost:5000/api/mark-checked-in/${guestId}`);
+  } catch (error) {
+    console.error('Error marking guest as checked in:', error);
+  }
+};
