@@ -1,90 +1,80 @@
-// Example backend route
-app.get('/api/check-in-guests/:email', async (req, res) => {
-  const { email } = req.params;
+const handleScanInput = (e) => {
+  const input = e.target.value.trim();
   
-  try {
-    const checkedInGuest = await db.query('SELECT * FROM checked_in_guests WHERE email = $1', [email]);
-    
-    if (checkedInGuest.rowCount > 0) {
-      res.json({ checked_in: true });
+  if (!input) return;
+
+  // Split the input into first name, last name, and email
+  const [firstName, lastName, email] = input.split(',').map(part => part.trim());
+
+  // Search for the guest in the guestList
+  const foundGuest = guestList.find(
+    (guest) =>
+      guest.email.toLowerCase() === email.toLowerCase() &&
+      guest.first_name.toLowerCase() === firstName.toLowerCase() &&
+      guest.last_name.toLowerCase() === lastName.toLowerCase()
+  );
+
+  if (foundGuest) {
+    if (foundGuest.checked_in) {
+      // Guest is already checked in
+      setBgImage(failedBg); // Set to failed background
+      setMessage(`${foundGuest.first_name} is already checked in!`);
+      setMessageColor('text-yellow-500'); // Change text color to yellow for warning
     } else {
-      res.json({ checked_in: false });
+      // Mark the guest as checked in
+      setBgImage(successBg); // Set to success background
+      setMessage(`Welcome, ${foundGuest.first_name}!`);
+      setMessageColor('text-green-500'); // Set text color to green for success
+
+      // Call the backend to mark the guest as checked in
+      markAsCheckedIn(foundGuest.id);
+
+      // Update the local guestList to reflect the checked-in status
+      const updatedGuestList = guestList.map((guest) =>
+        guest.id === foundGuest.id ? { ...guest, checked_in: true } : guest
+      );
+      setGuestList(updatedGuestList); // Update the state with the new guest list
     }
+  } else {
+    // Guest not found
+    setBgImage(failedBg); // Set to failed background
+    setMessage(`${firstName} is not on the guest list!`);
+    setMessageColor('text-red-500'); // Set text color to red for failure
+  }
+
+  // Reset the background and message after 2 seconds
+  setTimeout(() => {
+    setBgImage(standardBg); // Reset background to default
+    setMessage(''); // Clear the message
+    setMessageColor('text-white'); // Reset text color to default
+  }, 2000);
+
+  e.target.value = ''; // Clear the input field after handling the scan
+};
+
+// Function to mark guest as checked-in in the backend
+const markAsCheckedIn = async (guestId) => {
+  try {
+    await axios.put(`http://localhost:5000/api/mark-checked-in/${guestId}`);
   } catch (error) {
-    res.status(500).json({ error: 'Error fetching check-in status' });
+    console.error('Error marking guest as checked in:', error);
+  }
+};
+
+
+
+
+
+// Backend route to mark guest as checked-in
+app.put('/api/mark-checked-in/:id', async (req, res) => {
+  const guestId = req.params.id;
+
+  try {
+    // Update the guest's checked_in status to true
+    await db.query('UPDATE guests SET checked_in = true WHERE id = $1', [guestId]);
+    res.status(200).json({ message: 'Guest marked as checked-in successfully' });
+  } catch (error) {
+    console.error('Error marking guest as checked in:', error);
+    res.status(500).json({ error: 'Error updating check-in status' });
   }
 });
-
-
-const handleScanInput = async (e) => {
-  const input = e.target.value.trim();
-
-  // Clear previous timeout
-  if (debounceTimeoutRef.current) clearTimeout(debounceTimeoutRef.current);
-
-  // Set a new timeout
-  debounceTimeoutRef.current = setTimeout(async () => {
-    // Clean up the input to remove extra characters like newlines or spaces
-    const sanitizedInput = input.replace(/(\r\n|\n|\r)/gm, "").replace(/\s+/g, "");
-
-    if (sanitizedInput) {
-      const [firstName, lastName, email] = sanitizedInput.split(',');
-
-      // Ensure email and names are valid before proceeding
-      if (firstName && lastName && email) {
-        // Check if user is already in the `checked_in_guests` table
-        try {
-          const response = await axios.get(`http://localhost:5000/api/check-in-guests/${email}`);
-          const alreadyCheckedIn = response.data.checked_in;
-
-          if (alreadyCheckedIn) {
-            setBgImage(failedBg); // Set to failed background
-            setMessage(`${firstName} is already checked in!`);
-            setMessageColor('text-yellow-500'); // Set color for already checked-in message
-          } else {
-            // If not checked in, proceed with marking as checked-in
-            const foundGuest = guestList.find((guest) =>
-              guest.email.toLowerCase() === email.toLowerCase() &&
-              guest.first_name.toLowerCase() === firstName.toLowerCase() &&
-              guest.last_name.toLowerCase() === lastName.toLowerCase()
-            );
-
-            if (foundGuest) {
-              setScannedGuest(foundGuest);
-              setMessage(`Welcome, ${foundGuest.first_name}!`);
-              setBgImage(validBg);
-              setMessageColor('text-green-500');
-
-              // Mark as checked in in the database
-              await axios.post('http://localhost:5000/api/check-in', {
-                email: foundGuest.email,
-                first_name: foundGuest.first_name,
-                last_name: foundGuest.last_name,
-              });
-
-              // Update guest list locally
-              const updatedGuestList = guestList.map((guest) =>
-                guest.id === foundGuest.id ? { ...guest, checked_in: true } : guest
-              );
-              setGuestList(updatedGuestList);
-            } else {
-              setScannedGuest(null);
-              setMessage(`${firstName} is not on the guest list!`);
-              setBgImage(failedBg);
-              setMessageColor('text-red-500');
-            }
-          }
-        } catch (error) {
-          console.error('Error checking check-in status:', error.response ? error.response.data : error.message);
-        }
-      }
-    }
-
-    // Reset input and flash color after processing
-    setTimeout(() => {
-      setBgImage(defaultBg);
-      setMessage('');
-      e.target.value = ''; // Clear the input field
-    }, 800);
-  }, 200);
-};
