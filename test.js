@@ -43,27 +43,21 @@ def create_outlook_msg(first_name, last_name, email, qr_code_path, msg_filename)
         # Set the email properties
         mail.Subject = f"Your Invitation, {first_name} {last_name}"
         mail.To = email
-        
-        # Set the HTML body with an image and bold text
-        html_body = f"""
-        <html>
-        <body>
-            <img src="cid:header_image" alt="Event Header" width="600"><br>
-            <p><strong>Dear {first_name} {last_name},</strong></p>
-            <p>You are <strong>invited</strong> to our event. Please find your QR code attached.</p>
-            <p>We look forward to seeing you!</p>
-            <p>Best regards,<br><strong>Event Organizer</strong></p>
-        </body>
-        </html>
+
+        # Set the body text with basic formatting
+        body_text = f"""
+        Dear {first_name} {last_name},\n\n
+        You are invited to our event. Please find your QR code attached.\n\n
+        Best regards,\n
+        Event Organizer
         """
-        mail.HTMLBody = html_body
+        mail.Body = body_text
 
         # Attach the QR code
         mail.Attachments.Add(os.path.abspath(qr_code_path))
 
-        # Attach the header image and reference it in the email using "cid"
-        header_image_attachment = mail.Attachments.Add(os.path.abspath(header_image_path))
-        header_image_attachment.PropertyAccessor.SetProperty("http://schemas.microsoft.com/mapi/proptag/0x3712001F", "header_image")
+        # Attach the header image (this will appear as an attachment but Outlook will show it inline at the top)
+        mail.Attachments.Add(os.path.abspath(header_image_path))
 
         # Save as .msg file
         msg_filepath = os.path.join(msg_dir, msg_filename)
