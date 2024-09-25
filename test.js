@@ -1,91 +1,87 @@
-import os
-import pandas as pd
-import qrcode
-import win32com.client
+let isProcessing = false;  // Flag to indicate if a scan is in progress
 
-# Define the base path to the Desktop
-desktop_path = os.path.join(os.path.expanduser("~"), "Desktop")
+const handleScanInput = async (e) => {
+    const input = e.target.value.trim();
 
-# Define the paths for the QR codes and .msg files within the 'galagen' folder on the Desktop
-base_dir = os.path.join(desktop_path, 'galagen')
-qr_code_dir = os.path.join(base_dir, 'qr_codes')
-msg_dir = os.path.join(base_dir, 'msg_files')
+    // If processing a scan, ignore new inputs
+    if (isProcessing) return;
 
-# Create directories for QR codes and .msg files
-os.makedirs(qr_code_dir, exist_ok=True)
-os.makedirs(msg_dir, exist_ok=True)
+    // Set processing flag
+    isProcessing = true;
 
-# Load the Excel file
-guest_list = pd.read_excel('guest_list.xlsx')
+    try {
+        // Clear previous timeout if set
+        if (debounceTimeoutRef.current) {
+            clearTimeout(debounceTimeoutRef.current);
+        }
 
-# Path to the image to include in the email (place it in the same directory as the script or adjust the path)
-header_image_path = os.path.join(base_dir, 'header_image.png')
+        // Debounce the input for scans (use Enter key as an indicator for scanners)
+        debounceTimeoutRef.current = setTimeout(async () => {
+            // Check for Enter key to finalize the scan
+            if (e.key === 'Enter' || sanitizedInput) {
+                // Clean up the input to remove extra characters like newlines or spaces
+                const sanitizedInput = input.replace(/(\r\n|\n|\r)/gm, "").replace(/\s+/g, "");
 
-def generate_qr_code(data, filename):
-    qr = qrcode.QRCode(
-        version=1,
-        error_correction=qrcode.constants.ERROR_CORRECT_L,
-        box_size=10,
-        border=4,
-    )
-    qr.add_data(data)
-    qr.make(fit=True)
+                if (sanitizedInput) {
+                    const [firstName, lastName, email] = sanitizedInput.split(',');
 
-    img = qr.make_image(fill_color="black", back_color="white")
-    img.save(filename)
+                    // Ensure email and names are valid before proceeding
+                    if (firstName && lastName && email) {
+                        const foundGuest = guestList.find((guest) =>
+                            guest.email.toLowerCase() === email.toLowerCase() &&
+                            guest.first_name.toLowerCase() === firstName.toLowerCase() &&
+                            guest.last_name.toLowerCase() === lastName.toLowerCase()
+                        );
 
-def create_outlook_msg(first_name, last_name, email, qr_code_path, msg_filename):
-    try:
-        # Create an Outlook application instance
-        outlook = win32com.client.Dispatch('Outlook.Application')
-        mail = outlook.CreateItem(0)  # 0: olMailItem
+                        if (foundGuest) {
+                            try {
+                                // Attempt to check in the guest via backend
+                                await axios.post('http://localhost:5000/api/check-in', {
+                                    email: foundGuest.email,
+                                    first_name: foundGuest.first_name,
+                                    last_name: foundGuest.last_name
+                                });
 
-        # Set the email properties
-        mail.Subject = f"Your Invitation, {first_name} {last_name}"
-        mail.To = email
-        
-        # Set the HTML body with an image and bold text
-        html_body = f"""
-        <html>
-        <body>
-            <img src="cid:header_image" alt="Event Header" width="600"><br>
-            <p><strong>Dear {first_name} {last_name},</strong></p>
-            <p>You are <strong>invited</strong> to our event. Please find your QR code attached.</p>
-            <p>We look forward to seeing you!</p>
-            <p>Best regards,<br><strong>Event Organizer</strong></p>
-        </body>
-        </html>
-        """
-        mail.HTMLBody = html_body
+                                // Display success message
+                                setMessage(`Welcome, ${foundGuest.first_name}!`);
+                                setImage(validBg);  // Green background for success
+                                setMessageColor('text-green-500');
+                            } catch (error) {
+                                if (error.response && error.response.status === 400 && error.response.data.message === 'Guest has already checked in.') {
+                                    // Guest already checked in
+                                    setMessage(`${foundGuest.first_name} has already checked in!`);
+                                    setImage(alreadyCheckedInBg);  // Yellow background
+                                    setMessageColor('text-yellow-500');
+                                } else {
+                                    // Error checking in
+                                    setMessage(`${firstName} is not on the guest list!`);
+                                    setImage(failedBg);  // Red background for failure
+                                    setMessageColor('text-red-500');
+                                }
+                            }
+                        } else {
+                            // Guest not found
+                            setMessage(`${firstName} is not on the guest list!`);
+                            setImage(failedBg);  // Red background for failure
+                            setMessageColor('text-red-500');
+                        }
+                    }
+                }
+            }
+            
+            // Reset after processing
+            setTimeout(() => {
+                setMessage('');  // Reset message after display
+                setImage(defaultBg);  // Reset background
+                e.target.value = '';  // Clear the input field
+                isProcessing = false;  // Reset flag for new scans
+            }, 300);  // Adjust delay as needed
+        }, 500);  // Adjust debounce timeout if needed (scanner timing sensitivity)
+    } catch (error) {
+        console.error("Error processing scan:", error);
+        isProcessing = false;  // Ensure the flag resets after error
+    }
+};
 
-        # Attach the QR code
-        mail.Attachments.Add(os.path.abspath(qr_code_path))
-
-        # Attach the header image and reference it in the email using "cid"
-        header_image_attachment = mail.Attachments.Add(os.path.abspath(header_image_path))
-        header_image_attachment.PropertyAccessor.SetProperty("http://schemas.microsoft.com/mapi/proptag/0x3712001F", "header_image")
-
-        # Save as .msg file
-        msg_filepath = os.path.join(msg_dir, msg_filename)
-        
-        # Output debug information
-        print(f"Attempting to save .msg file to: {msg_filepath}")
-        
-        # Save as .msg format (3 indicates .msg format)
-        mail.SaveAs(msg_filepath, 3)  # 3 is the OlSaveAsType for .msg format
-
-    except Exception as e:
-        print(f"Failed to save .msg file for {first_name} {last_name}: {e}")
-
-# Iterate through the guest list, generate QR codes, and create .msg files
-for index, row in guest_list.iterrows():
-    # Generate QR code
-    data = f"{row['FirstName']},{row['LastName']},{row['Email']}"
-    qr_code_filename = os.path.join(qr_code_dir, f"qr_{row['FirstName']}_{row['LastName']}.png")
-    generate_qr_code(data, qr_code_filename)
-    
-    # Create a .msg file for the email
-    msg_filename = f"invitation_{row['FirstName']}_{row['LastName']}.msg"
-    create_outlook_msg(row['FirstName'], row['LastName'], row['Email'], qr_code_filename, msg_filename)
-
-print("Processing completed.")
+// Make sure the input element listens for the "Enter" key
+<input type="text" onKeyDown={handleScanInput} />
