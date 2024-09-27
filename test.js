@@ -1,11 +1,7 @@
-// src/components/Portfolio.jsx
-
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import Modal from 'react-modal';
 import { Line } from 'react-chartjs-2';
-import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
-import { materialDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import { FaSun, FaMoon } from 'react-icons/fa';
 import { Typewriter } from 'react-simple-typewriter';
 import 'react-simple-typewriter/dist/index.css';
@@ -19,29 +15,38 @@ const projects = [
   {
     id: 1,
     title: 'Project Title 1',
-    category: 'Web Development',
+    category: 'Category 1',
     description:
       'Brief description of Project 1. Explain what the project is about in one or two sentences.',
-    image: '/assets/images/project1.gif',
-    video: '/assets/videos/project1.mp4',
-    details:
-      'Detailed description of Project 1. Highlight your achievements, technologies used, and the impact of the project.',
+    images: ['/assets/images/project1_1.gif', '/assets/images/project1_2.png'],
+    details: `
+      <p><strong>Overview:</strong> This project involved building a complex web application.</p>
+      <p><em>Key Achievements:</em></p>
+      <ul>
+        <li><strong>50% faster processing</strong> compared to the previous version.</li>
+        <li>Automated deployment and CI/CD pipeline.</li>
+      </ul>
+    `,
   },
   {
     id: 2,
     title: 'Project Title 2',
-    category: 'Full Stack Development',
+    category: 'Category 2',
     description:
       'Brief description of Project 2. Explain what the project is about in one or two sentences.',
-    image: '/assets/images/project2.png',
-    video: null,
-    details:
-      'Detailed description of Project 2. Highlight your achievements, technologies used, and the impact of the project.',
+    images: ['/assets/images/project2.png'],
+    details: `
+      <p><strong>Overview:</strong> Created a mobile-responsive platform for managing tasks efficiently.</p>
+      <p><em>Key Achievements:</em></p>
+      <ul>
+        <li>Optimized performance by <strong>30%</strong>.</li>
+        <li>Improved user engagement through UX/UI redesign.</li>
+      </ul>
+    `,
   },
-  // Add more projects as needed
 ];
 
-// Placeholder general statistics data
+// Placeholder statistics
 const generalStats = [
   { id: 1, label: 'Statistic Label 1', value: 100 },
   { id: 2, label: 'Statistic Label 2', value: 200 },
@@ -49,7 +54,6 @@ const generalStats = [
   { id: 4, label: 'Statistic Label 4', value: 400 },
 ];
 
-// Modal Styles
 const customStyles = {
   content: {
     top: '50%',
@@ -58,7 +62,7 @@ const customStyles = {
     bottom: 'auto',
     marginRight: '-50%',
     transform: 'translate(-50%, -50%)',
-    maxWidth: '800px',
+    maxWidth: '900px',
     width: '90%',
     maxHeight: '90vh',
     overflowY: 'auto',
@@ -72,7 +76,6 @@ export default function Portfolio() {
   const [modalIsOpen, setIsOpen] = useState(false);
   const [selectedProject, setSelectedProject] = useState(null);
   const [darkMode, setDarkMode] = useState(false);
-  const [activeFilter, setActiveFilter] = useState('All');
 
   const openModal = (project) => {
     setSelectedProject(project);
@@ -84,7 +87,7 @@ export default function Portfolio() {
     setSelectedProject(null);
   };
 
-  // Placeholder chart data
+  // Chart data
   const chartData = {
     labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul'],
     datasets: [
@@ -101,15 +104,10 @@ export default function Portfolio() {
   return (
     <div className={darkMode ? 'dark' : ''}>
       <div className="min-h-screen bg-gray-100 dark:bg-gray-900 transition-colors duration-500">
-        {/* Navigation Bar */}
         <nav className="bg-white dark:bg-gray-800 shadow fixed w-full z-10">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex justify-between h-16">
-              <div className="flex">
-                <div className="flex-shrink-0 flex items-center">
-                  <h1 className="text-xl font-bold text-gray-800 dark:text-white">My Portfolio</h1>
-                </div>
-              </div>
+              <h1 className="text-xl font-bold text-gray-800 dark:text-white">My Portfolio</h1>
               <div className="flex items-center">
                 <button
                   onClick={() => setDarkMode(!darkMode)}
@@ -117,30 +115,11 @@ export default function Portfolio() {
                 >
                   {darkMode ? <FaSun size={24} /> : <FaMoon size={24} />}
                 </button>
-                <a
-                  href="#projects"
-                  className="text-gray-800 dark:text-white px-3 py-2 rounded-md text-sm font-medium hover:bg-gray-200 dark:hover:bg-gray-700 transition"
-                >
-                  Projects
-                </a>
-                <a
-                  href="#statistics"
-                  className="text-gray-800 dark:text-white px-3 py-2 rounded-md text-sm font-medium hover:bg-gray-200 dark:hover:bg-gray-700 transition"
-                >
-                  Statistics
-                </a>
-                <a
-                  href="#contact"
-                  className="text-gray-800 dark:text-white px-3 py-2 rounded-md text-sm font-medium hover:bg-gray-200 dark:hover:bg-gray-700 transition"
-                >
-                  Contact
-                </a>
               </div>
             </div>
           </div>
         </nav>
 
-        {/* Hero Section */}
         <section className="pt-20 bg-gradient-to-r from-blue-500 to-indigo-600 text-white">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 text-center">
             <motion.h1
@@ -151,31 +130,9 @@ export default function Portfolio() {
             >
               Welcome to My Portfolio
             </motion.h1>
-            <motion.p
-              className="text-xl mb-6"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 1, duration: 1 }}
-            >
-              <Typewriter
-                words={['Innovator', 'Developer', 'Automator']}
-                loop={false}
-                cursor
-                cursorStyle="_"
-                typeSpeed={70}
-                deleteSpeed={50}
-                delaySpeed={1000}
-              />
+            <motion.p className="text-xl mb-6" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1, duration: 1 }}>
+              <Typewriter words={['Innovator', 'Developer', 'Automator']} loop={false} cursor cursorStyle="_" typeSpeed={70} deleteSpeed={50} delaySpeed={1000} />
             </motion.p>
-            <motion.a
-              href="#projects"
-              className="inline-block bg-white text-blue-600 font-semibold py-3 px-6 rounded-full shadow-lg hover:bg-gray-100 transition"
-              initial={{ scale: 0 }}
-              animate={{ scale: 1 }}
-              transition={{ delay: 2, duration: 1 }}
-            >
-              Explore My Work
-            </motion.a>
           </div>
         </section>
 
@@ -184,111 +141,107 @@ export default function Portfolio() {
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <h2 className="text-3xl font-bold text-center text-gray-800 dark:text-white mb-12">Projects</h2>
 
-            {/* Filter Buttons */}
-            <div className="flex justify-center mb-8">
-              {['All', 'Web Development', 'Automation', 'Full Stack Development'].map((filter) => (
-                <button
-                  key={filter}
-                  onClick={() => setActiveFilter(filter)}
-                  className={`mx-2 px-4 py-2 rounded ${
-                    activeFilter === filter
-                      ? 'bg-blue-600 text-white'
-                      : 'bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-white'
-                  } hover:bg-blue-700 transition`}
+            {/* Horizontal Project Layout */}
+            <div className="space-y-8">
+              {projects.map((project) => (
+                <motion.div
+                  key={project.id}
+                  className="flex flex-col sm:flex-row bg-white dark:bg-gray-700 rounded-lg shadow-lg overflow-hidden hover:shadow-2xl transition-shadow duration-300"
+                  whileHover={{ scale: 1.05 }}
                 >
-                  {filter}
-                </button>
-              ))}
-            </div>
+                  {/* Project Images */}
+                  <div className="relative sm:w-1/2">
+                    {project.images[0] && (
+                      <img
+                        src={project.images[0]}
+                        alt={project.title}
+                        className="w-full h-full object-cover"
+                        loading="lazy"
+                      />
+                    )}
+                  </div>
 
-            {/* Project Grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-              {projects
-                .filter((project) => activeFilter === 'All' || project.category === activeFilter)
-                .map((project) => (
-                  <motion.div
-                    key={project.id}
-                    className="bg-white dark:bg-gray-700 rounded-lg shadow-lg overflow-hidden hover:shadow-2xl transition-shadow duration-300"
-                    whileHover={{ scale: 1.05 }}
-                  >
-                    <div className="relative h-48">
-                      {project.image && (
-                        <img
-                          src={project.image}
-                          alt={project.title}
-                          className="w-full h-full object-cover"
-                          loading="lazy"
-                        />
-                      )}
-                      {project.video && (
-                        <video
-                          className="w-full h-full object-cover"
-                          controls
-                          src={project.video}
-                          alt={project.title}
-                          loading="lazy"
-                        />
-                      )}
-                    </div>
-                    <div className="p-6">
+                  {/* Project Details */}
+                  <div className="p-6 flex flex-col justify-between sm:w-1/2">
+                    <div>
                       <h3 className="text-xl font-semibold text-gray-800 dark:text-white">{project.title}</h3>
                       <p className="mt-2 text-gray-600 dark:text-gray-300">{project.description}</p>
-                      <button
-                        onClick={() => openModal(project)}
-                        className="mt-4 inline-block bg-blue-600 text-white font-semibold py-2 px-4 rounded hover:bg-blue-700 transition"
-                      >
-                        Learn More
-                      </button>
                     </div>
-                  </motion.div>
-                ))}
+                    <button
+                      onClick={() => openModal(project)}
+                      className="mt-4 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition"
+                    >
+                      View Details
+                    </button>
+                  </div>
+                </motion.div>
+              ))}
             </div>
           </div>
         </section>
 
         {/* Statistics Section */}
-        <section id="statistics" className="py-20 bg-gray-200 dark:bg-gray-900">
+        <section id="statistics" className="py-20 bg-white dark:bg-gray-800">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <h2 className="text-3xl font-bold text-center text-gray-800 dark:text-white mb-12">Statistics</h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+            <h2 className="text-3xl font-bold text-center text-gray-800 dark:text-white mb-12">Statistics & Achievements</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-12">
               {generalStats.map((stat) => (
-                <div
-                  key={stat.id}
-                  className="bg-white dark:bg-gray-700 rounded-lg shadow-lg p-6 text-center"
-                >
-                  <CountUp start={0} end={stat.value} duration={2} delay={0} className="text-3xl font-bold text-blue-600 dark:text-blue-400" />
+                <div key={stat.id} className="text-center">
+                  <div className="text-5xl font-bold text-blue-600 dark:text-blue-400">
+                    <CountUp end={stat.value} />+
+                  </div>
                   <p className="mt-2 text-gray-600 dark:text-gray-300">{stat.label}</p>
                 </div>
               ))}
             </div>
+            <div className="mt-12">
+              <h3 className="text-2xl font-semibold text-gray-800 dark:text-white mb-6 text-center">Projects Over Time</h3>
+              <div className="bg-gray-100 dark:bg-gray-700 p-6 rounded-lg shadow">
+                <Line data={chartData} options={{ responsive: true, maintainAspectRatio: false }} height={400} />
+              </div>
+            </div>
           </div>
         </section>
 
-        {/* Chart Section */}
-        <section className="py-20 bg-gray-100 dark:bg-gray-800">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <h2 className="text-3xl font-bold text-center text-gray-800 dark:text-white mb-12">Projects Over Time</h2>
-            <Line data={chartData} options={{ responsive: true, maintainAspectRatio: false }} />
-          </div>
-        </section>
+        {/* Project Modal */}
+        {selectedProject && (
+          <Modal
+            isOpen={modalIsOpen}
+            onRequestClose={closeModal}
+            style={customStyles}
+            contentLabel="Project Details"
+          >
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-2xl font-bold">{selectedProject.title}</h2>
+              <button onClick={closeModal} className="text-gray-500 hover:text-gray-800 dark:hover:text-gray-100">
+                Close
+              </button>
+            </div>
+            <div className="mb-4">
+              <strong>Category:</strong> {selectedProject.category}
+            </div>
+            {/* Insert formatted HTML into modal */}
+            <div
+              className="text-gray-700 dark:text-gray-300"
+              dangerouslySetInnerHTML={{ __html: selectedProject.details }}
+            />
+            {/* Render all project images */}
+            <div className="mt-6">
+              {selectedProject.images.map((image, index) => (
+                <img
+                  key={index}
+                  src={image}
+                  alt={`${selectedProject.title} ${index + 1}`}
+                  className="w-full h-auto mb-4 rounded-lg"
+                />
+              ))}
+            </div>
+          </Modal>
+        )}
 
-        {/* Contact Section */}
-        <section id="contact" className="py-20 bg-gray-200 dark:bg-gray-900">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <h2 className="text-3xl font-bold text-center text-gray-800 dark:text-white mb-12">Contact Me</h2>
-            <p className="text-center text-gray-600 dark:text-gray-300 mb-4">Feel free to reach out to me!</p>
-            <p className="text-center text-gray-600 dark:text-gray-300 mb-4">Email: androrezkalla@gmail.com</p>
-          </div>
-        </section>
-
-        {/* Modal for Project Details */}
-        <Modal isOpen={modalIsOpen} onRequestClose={closeModal} style={customStyles}>
-          <h2 className="text-2xl font-bold text-gray-800 dark:text-white mb-4">{selectedProject?.title}</h2>
-          <p className="text-gray-600 dark:text-gray-300 mb-4">{selectedProject?.details}</p>
-          <button onClick={closeModal} className="mt-4 inline-block bg-red-600 text-white font-semibold py-2 px-4 rounded hover:bg-red-700 transition">
-            Close
-          </button>
-        </Modal>
+        <footer className="py-6 text-center bg-gray-200 dark:bg-gray-900 text-gray-800 dark:text-gray-400">
+          &copy; 2024 My Portfolio. All rights reserved.
+        </footer>
       </div>
     </div>
   );
