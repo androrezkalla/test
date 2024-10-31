@@ -1,19 +1,248 @@
-When I first joined NBC Capital Markets as a Technology Operations Summer Analyst, my understanding of IT was extremely limited to the basic tasks I imagined it involved: troubleshooting simple internet issues, replacing broken hardware, and answering routine questions that people had on a help desk level. I had no clue that the role would require such a comprehensive understanding of so many complex systems, technology stacks and high-stakes responsibilities. To be honest, I hadn’t even anticipated passing the initial phone interview. Simple questions about CPU and GPU brands had stumped me, and the in person technical assessment was even more challenging to go through. At one point, I nearly broke a computer trying to take the back cover off to expose the hardware. I left that interview embarrassed by my performance, fully convinced I hadn’t gotten the job, feeling as though I had failed to demonstrate the necessary technical knowledge to be in the role, or even the entire IT industry in general. 
-When NBC offered me the position, I was both excited and terrified. All of my experience prior to joining the bank was almost entirely in coding and software engineering; I knew very little about IT infrastructure, system administration, or network management. Despite this unfamiliarity, I felt a responsibility and a drive to prove myself that I can do it and learn as much as I could. This essay outlines my journey from a hesitant beginner, overwhelmed by the complex landscape of IT, to a confident analyst, deeply curious about the technology that powers the tech industry. It is a journey defined by initial struggle, gradual improvement and most importantly, a deep appreciation for the systems and problem-solving methodologies that characterizes the field IT.
-My first day on the job shattered any illusions I had about a slow-paced or straightforward environment like a help desk position as I was immediately tasked with preparing for the incoming intern class, an assignment that required us to configure and deploy hundreds of devices. This involved a bunch of unfamiliar tools and processes, including PXE imaging, BIOS updates, MDM profile setups, MaaS360, application bundles, React, Deployment Dashboard and more. These systems were completely foreign to me and I had no working knowledge of what any of it meant. The sheer amount of information that was thrown at us during those first couple of weeks and the steep learning curve felt like being thrown into the deep end of a pool, especially with sharp deadlines approaching for the incoming intern classes. However, that initial rush of anxiety quickly transformed into a determination to learn and perform.
-At that stage, I understood only enough to get things working, but I was operating on a very superficial level. I could execute tasks but couldn’t fully grasp the mechanisms behind them and was too overwhelmed to look beyond getting things to work. For example I knew I had to PXE boot an asset to install a clean image of windows, but had no idea how PXE works, the backend systems that its connected to and all the background technologies that make PXE booting possible. This frustration of knowing only the “what” without understanding the “how” or “why” paired with motivation from our mentor Peter to investigate beyond the surface level with homework assignments pushed me to study in greater depth, and I started asking more questions. With each small task, I would spend extra time researching the underlying processes, slowly building a foundational knowledge that would be super useful to me later. Each piece of information I uncovered added another layer to my understanding of IT and the way the bank runs, gradually transforming the overwhelming complexity into a more navigable environment.
-One of the most significant challenges during those early weeks was working cohesively as a team. We hadn’t met each other prior to the internship, and the lack of established workflows sometimes made collaboration feel rocky. Each team member was adapting to their own learning curve, and our collective inexperience led to occasional missteps, especially when we had to get creative and the solutions were left up to us. We would encounter scenarios where misunderstandings led to errors in setups, creating unnecessary delays. However, as we got to know one another and learned to anticipate each other’s strengths, we became a well-oiled machine. We developed efficient workflows in the lab room and divided onboarding tasks to play to our individual strengths. By the time onboarding week arrived, we were prepared and able to execute our responsibilities smoothly. For me personally, this was a turning point—I had gone from feeling overwhelmed to feeling confident, at least in the core skills of imaging devices, installing bundles, and configuring laptops and mobile devices. It was a powerful lesson in the importance of teamwork and the value of leveraging diverse skill sets.
-Still, despite gaining confidence in these tasks, I realized I was only scratching the surface. I understood the steps to complete a task, but not the reasons why those steps were necessary. This gap in understanding became more apparent as our work expanded into more complex areas of support during the 3 month extension. I remember a day when we were troubleshooting network connectivity issues for a networking switch for our lab room. As I listened to my colleagues discuss subnetting and VLANs, I felt like I was standing on the outside of a glass wall, peering into a world of knowledge that seemed just out of reach. I knew that if I wanted to be truly effective, I needed to break down that barrier and gain a deeper understanding of these fundamental concepts.
-Throughout the entire internship, Peter continued to encourage us to dig deeper and truly understand the technology infrastructure at NBC. He didn’t want us to just know how to get things done; he wanted us to know why things worked the way they did. He urged us to ask questions about the systems we were interacting with: How does Active Directory function as it does? How does Group Policy control configurations across devices? What is the purpose behind IP segmentation in large organizations? This push for deeper understanding transformed my approach. Suddenly, IT wasn’t just about solving immediate problems anymore, it was investigative work, a puzzle waiting to be unraveled. Each topic I researched and each question I asked opened new avenues for me, revealing a more complex underlying system or function that directly impacts the issue I was trying to address. This is one of the most significant skills I picked up during my internships. Learning how to approach problems from such an analytical perspective is something I will carry on in any role I work in and outside working environments as well. 
-As I began to immerse myself in this deeper understanding, I found the world of IT not just complicated but fascinating. The more I learned, the more I realized how intricate IT truly is. I gained insights into network management, learning about IP segmentation and the logic behind organized infrastructures. I discovered the layers of technology that support even the smallest functions, like setting up monitors—understanding concepts like MST (Multi-Stream Transport), SST (Single-Stream Transport), and the importance of proper cabling. Each new piece of knowledge connected with the last, creating a comprehensive picture of IT that I had never imagined. Piecing together these pieces into a coherent understanding kept me engaged and eager to learn more. I began to approach my work not just as a series of tasks to be completed but as a connected system that requires thoughtful consideration before proceeding. Understanding how things worked and how to diagnose problems down to their root cause.
-As I got more familiar with IT infrastructure, I began to see opportunities to apply my coding skills in ways I hadn’t anticipated. At some point, I felt like I became the go-to person for coding-related tasks on the team, automating processes using PowerShell scripts, which proved invaluable in simplifying repetitive tasks and increasing our team’s efficiency. For instance, I took the lead and initiative on writing automation scripts integrated with active directory to pull login ID’s, home drive information, VBA scripts for flyer creation/automation and many more tasks that required coding and automation. Each time I automated a process with coding and powershell, I felt a sense of accomplishment, knowing I was not just completing tasks but also enhancing our overall efficiency. My coding background gave me a unique perspective in the IT space, allowing me to identify bottlenecks and devise software solutions that streamlined operations and create personalized solutions to remediate them. Playing into that strength that I had from previous internships gave me the edge that I needed to stand out. 
-One of the most rewarding experiences for me was developing the DSS onboarding dashboard as part of my end-of-internship project. This dashboard integrated everything I had learned about IT infrastructure, Active Directory, and registry keys with my existing skills in coding. The dashboard wasn’t just another tool—it was a solution that bridged several departments, reaching across NBC offices in Canada and gaining visibility with various teams. Knowing that my work had a real impact on the DSS workflow, and that it streamlined onboarding processes on a large scale, was incredibly fulfilling. The feedback I got from our meetings with the Canadian team and the local leadership here at DSS was motivating and inspiring, reinforcing my desire to innovate and contribute to the organization from both an IT and a software engineer perspective. I took great pride in knowing that the dashboard not only made processes easier but also fostered collaboration across teams in Canada who were inspired by the level of white glove services DSS provided to onboarding new users. 
-Another memorable project was developing the check-in system for NBC’s Performance Awards and 2024 Catalyst event, where I had to create a custom solution on short notice and it was going to be public facing for everyone attending the event. The ability to adapt quickly, assess business needs, and deliver essential features demonstrated not only my technical growth but also my capability to handle high-pressure tasks. It was gratifying to know that my contributions were trusted, and that my efforts could have a lasting effect on NBCs internal events. I vividly recall the moments leading up to the event when everything needed to be finalized. The adrenaline rush from solving last-minute glitches and ensuring the system functioned flawlessly only added to the experience. I felt like a key player in a crucial operation, and it reinforced my commitment to delivering high-quality work. Especially because I was also in charge of automating and generating emails to all guests attending the event- I owned that project from start to finish and even called it my “baby”.
-In the months that followed, I began to fully recognize the impact of my work and how it shaped both my technical abilities and personal growth. Each project, whether routine or high-stakes, added layers to my skill set, challenging me to innovate and adapt. Additionally, working under tight deadlines sharpened my project management skills. I realized that beyond technical expertise, effective time management, prioritization, and anticipation of challenges were equally essential. I learned how to approach a project from multiple angles, anticipating potential roadblocks and proactively addressing them. By the end of each project I worked on, I had developed a systematic approach to managing and executing tasks, balancing technical work with strategic foresight.
-I am extremely grateful for the ongoing extension, giving me the chance to continue refining my IT skills, coding capabilities, and understanding of operational challenges. During this time, I’m working on increasingly complex issues, becoming more comfortable with areas like network troubleshooting and advanced IT operations. I’m now starting to feel confident in my technical skills but also much more attuned to the strategic considerations of IT within a large organization. This transition from a task-oriented mindset to a more strategic perspective was crucial for my professional development. I learned to think critically about how each technical decision impacted the overall task or problem that I was addressing. 
-Another significant part of my learning journey occurred during my work with the disaster recovery site. It was an eye-opening experience to see the measures NBC had in place to ensure operational continuity, even under extreme circumstances. Being part of the team responsible for remediating issues related to CrowdStrike outages across multiple locations also gave me an appreciation for the quick response and incident management process implemented at NBC. These experiences underscored the importance of adaptability and preparedness in IT—principles that I carry with me to this day. I learned how critical it is to have emergency plans, and the impact of Incidents on business continuity became crystal clear to me. The hands-on experience I gained during these operations deepened my understanding of the complexities of disaster recovery and risk management.
-Looking back, it’s really hard to believe that I started this internship with almost no knowledge of IT. What was once overwhelming has now become a source of excitement and curiosity. The transformation I experienced at NBC was largely due to the support and encouragement of my managers and teammates. Peter’s insistence on understanding the “why” was instrumental in pushing me beyond my comfort zone, while Carmine’s guidance and feedback gave me the confidence to keep pushing forward. I learned the value of teamwork, resilience, and adaptability—qualities that I believe are essential for success in any field. Each of these lessons has contributed to a more profound understanding of my capabilities and the value I bring to a team. I came out from this experience not just with technical skills but with a mindset geared toward continuous improvement and a passion for problem-solving. One of the most significant takeaways from my time at NBC was the emphasis on continuous improvement and innovation. Every task, no matter how routine, presented an opportunity to enhance efficiency. 
-Beyond the technical and operational skills, another one of the most profound lessons from my journey is the value of adaptability. The tech landscape is in constant flux, and the ability to pivot, learn, and apply new skills quickly is invaluable. I’ve had to evolve from someone who relied on predefined processes to someone who could assess a situation, identify gaps, and engineer solutions in real-time. It’s this adaptability that I believe will be one of my strongest assets as I move forward.
-As I look ahead, I am eager to continue this journey of growth in the technology sector. My experiences at NBC have fueled my desire to explore more advanced technologies and methodologies. I now see the world of IT as an ever-evolving landscape filled with challenges and opportunities for innovation. I am excited about the chance of using my skills to hopefully continue to contribute to organizations that prioritize technological advancement and problem-solving. I understand that the journey of learning is ongoing, and I look forward to new challenges that will push me to grow further and allow me to make meaningful contributions in the technology field 
+import React, { useState } from 'react';
+import { motion } from 'framer-motion';
+import Modal from 'react-modal';
+import { Line } from 'react-chartjs-2';
+import { FaSun, FaMoon } from 'react-icons/fa';
+import { Typewriter } from 'react-simple-typewriter';
+import 'react-simple-typewriter/dist/index.css';
+import CountUp from 'react-countup';
+import { Chart, registerables } from 'chart.js';
 
+Chart.register(...registerables);
 
+// Placeholder project data
+const projects = [
+  {
+    id: 1,
+    title: 'Project Title 1',
+    category: 'Category 1',
+    description:
+      'Brief description of Project 1. Explain what the project is about in one or two sentences.',
+    images: ['/assets/images/project1_1.gif', '/assets/images/project1_2.png'],
+    details: `
+      <p><strong>Overview:</strong> This project involved building a complex web application.</p>
+      <p><em>Key Achievements:</em></p>
+      <ul>
+        <li><strong>50% faster processing</strong> compared to the previous version.</li>
+        <li>Automated deployment and CI/CD pipeline.</li>
+      </ul>
+    `,
+  },
+  {
+    id: 2,
+    title: 'Project Title 2',
+    category: 'Category 2',
+    description:
+      'Brief description of Project 2. Explain what the project is about in one or two sentences.',
+    images: ['/assets/images/project2.png'],
+    details: `
+      <p><strong>Overview:</strong> Created a mobile-responsive platform for managing tasks efficiently.</p>
+      <p><em>Key Achievements:</em></p>
+      <ul>
+        <li>Optimized performance by <strong>30%</strong>.</li>
+        <li>Improved user engagement through UX/UI redesign.</li>
+      </ul>
+    `,
+  },
+];
+
+// Placeholder statistics
+const generalStats = [
+  { id: 1, label: 'Statistic Label 1', value: 100 },
+  { id: 2, label: 'Statistic Label 2', value: 200 },
+  { id: 3, label: 'Statistic Label 3', value: 300 },
+  { id: 4, label: 'Statistic Label 4', value: 400 },
+];
+
+const customStyles = {
+  content: {
+    top: '50%',
+    left: '50%',
+    right: 'auto',
+    bottom: 'auto',
+    marginRight: '-50%',
+    transform: 'translate(-50%, -50%)',
+    maxWidth: '900px',
+    width: '90%',
+    maxHeight: '90vh',
+    overflowY: 'auto',
+    padding: '2rem',
+  },
+};
+
+Modal.setAppElement('#root');
+
+export default function Portfolio() {
+  const [modalIsOpen, setIsOpen] = useState(false);
+  const [selectedProject, setSelectedProject] = useState(null);
+  const [darkMode, setDarkMode] = useState(false);
+
+  const openModal = (project) => {
+    setSelectedProject(project);
+    setIsOpen(true);
+  };
+
+  const closeModal = () => {
+    setIsOpen(false);
+    setSelectedProject(null);
+  };
+
+  // Chart data
+  const chartData = {
+    labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul'],
+    datasets: [
+      {
+        label: 'Projects Completed',
+        data: [2, 3, 5, 4, 6, 3, 7],
+        fill: false,
+        backgroundColor: '#3B82F6',
+        borderColor: '#3B82F6',
+      },
+    ],
+  };
+
+  return (
+    <div className={darkMode ? 'dark' : ''}>
+      <div className="min-h-screen bg-gray-100 dark:bg-gray-900 transition-colors duration-500">
+        <nav className="bg-white dark:bg-gray-800 shadow fixed w-full z-10">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="flex justify-between h-16">
+              <h1 className="text-xl font-bold text-gray-800 dark:text-white">My Portfolio</h1>
+              <div className="flex items-center">
+                <button
+                  onClick={() => setDarkMode(!darkMode)}
+                  className="text-gray-800 dark:text-white focus:outline-none mr-4"
+                >
+                  {darkMode ? <FaSun size={24} /> : <FaMoon size={24} />}
+                </button>
+              </div>
+            </div>
+          </div>
+        </nav>
+
+        <section className="pt-20 bg-gradient-to-r from-blue-500 to-indigo-600 text-white">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 text-center">
+            <motion.h1
+              className="text-5xl font-bold mb-4"
+              initial={{ opacity: 0, y: -50 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 1 }}
+            >
+              Welcome to My Portfolio
+            </motion.h1>
+            <motion.p className="text-xl mb-6" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1, duration: 1 }}>
+              <Typewriter words={['Innovator', 'Developer', 'Automator']} loop={false} cursor cursorStyle="_" typeSpeed={70} deleteSpeed={50} delaySpeed={1000} />
+            </motion.p>
+          </div>
+        </section>
+
+        {/* Projects Section */}
+        <section id="projects" className="py-20 bg-gray-100 dark:bg-gray-800">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <h2 className="text-3xl font-bold text-center text-gray-800 dark:text-white mb-12">Projects</h2>
+
+            {/* Horizontal Project Layout */}
+            <div className="space-y-8">
+              {projects.map((project) => (
+                <motion.div
+                  key={project.id}
+                  className="flex flex-col sm:flex-row bg-white dark:bg-gray-700 rounded-lg shadow-lg overflow-hidden hover:shadow-2xl transition-shadow duration-300"
+                  whileHover={{ scale: 1.05 }}
+                >
+                  {/* Project Images */}
+                  <div className="relative sm:w-1/2">
+                    {project.images[0] && (
+                      <img
+                        src={project.images[0]}
+                        alt={project.title}
+                        className="w-full h-full object-cover"
+                        loading="lazy"
+                      />
+                    )}
+                  </div>
+
+                  {/* Project Details */}
+                  <div className="p-6 flex flex-col justify-between sm:w-1/2">
+                    <div>
+                      <h3 className="text-xl font-semibold text-gray-800 dark:text-white">{project.title}</h3>
+                      <p className="mt-2 text-gray-600 dark:text-gray-300">{project.description}</p>
+                    </div>
+                    <button
+                      onClick={() => openModal(project)}
+                      className="mt-4 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition"
+                    >
+                      View Details
+                    </button>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* Statistics Section */}
+        <section id="statistics" className="py-20 bg-white dark:bg-gray-800">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <h2 className="text-3xl font-bold text-center text-gray-800 dark:text-white mb-12">Statistics & Achievements</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-12">
+              {generalStats.map((stat) => (
+                <div key={stat.id} className="text-center">
+                  <div className="text-5xl font-bold text-blue-600 dark:text-blue-400">
+                    <CountUp end={stat.value} />+
+                  </div>
+                  <p className="mt-2 text-gray-600 dark:text-gray-300">{stat.label}</p>
+                </div>
+              ))}
+            </div>
+            <div className="mt-12">
+              <h3 className="text-2xl font-semibold text-gray-800 dark:text-white mb-6 text-center">Projects Over Time</h3>
+              <div className="bg-gray-100 dark:bg-gray-700 p-6 rounded-lg shadow">
+                <Line data={chartData} options={{ responsive: true, maintainAspectRatio: false }} height={400} />
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Project Modal */}
+        {selectedProject && (
+          <Modal
+            isOpen={modalIsOpen}
+            onRequestClose={closeModal}
+            style={customStyles}
+            contentLabel="Project Details"
+          >
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-2xl font-bold">{selectedProject.title}</h2>
+              <button onClick={closeModal} className="text-gray-500 hover:text-gray-800 dark:hover:text-gray-100">
+                Close
+              </button>
+            </div>
+            <div className="mb-4">
+              <strong>Category:</strong> {selectedProject.category}
+            </div>
+            {/* Insert formatted HTML into modal */}
+            <div
+              className="text-gray-700 dark:text-gray-300"
+              dangerouslySetInnerHTML={{ __html: selectedProject.details }}
+            />
+            {/* Render all project images */}
+            <div className="mt-6">
+              {selectedProject.images.map((image, index) => (
+                <img
+                  key={index}
+                  src={image}
+                  alt={`${selectedProject.title} ${index + 1}`}
+                  className="w-full h-auto mb-4 rounded-lg"
+                />
+              ))}
+            </div>
+          </Modal>
+        )}
+
+        <footer className="py-6 text-center bg-gray-200 dark:bg-gray-900 text-gray-800 dark:text-gray-400">
+          &copy; 2024 My Portfolio. All rights reserved.
+        </footer>
+      </div>
+    </div>
+  );
+}
